@@ -1,6 +1,7 @@
 // Mock data for risks
-const mockRisks = [
   // manually assigned to locationID, would be a coonection to a database
+const mockRisks = [
+
   {
     id: "risk-1",
     title: "Single Point of Failure - Critical Machinery",

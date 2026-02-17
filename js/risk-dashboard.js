@@ -3,6 +3,8 @@
  * Displays risk management metrics and interactive dashboard
  */
 
+this.risks = []; // This will hold the risk data, ideally fetched from an API or database //
+
 const COLORS = {
   critical: "#dc2626",
   high: "#f97316",
@@ -26,7 +28,8 @@ class RiskDashboard {
 
   init() {
     this.setupEventListeners();
-    this.render();
+    this.loadData(); //THIS STARTS THE FETCHING OF DATA, WHICH THEN CALLS RENDER
+    this.render(); 
   }
 
   setupEventListeners() {
@@ -79,7 +82,7 @@ class RiskDashboard {
       const riskCard = e.target.closest("[data-risk-id]");
       if (riskCard) {
         const riskId = riskCard.dataset.riskId;
-        this.selectedRisk = mockRisks.find((r) => r.id === riskId);
+        this.selectedRisk = this.risks.find((r) => r.id === riskId);
         this.render();
       }
     });
@@ -105,7 +108,7 @@ class RiskDashboard {
   }
 
   getFilteredRisks() {
-    return mockRisks.filter((risk) => {
+    return this.risks.filter((risk) => {
       const matchesLocation =
         this.selectedLocation === "all" ||
         risk.locationId === this.selectedLocation;
@@ -131,10 +134,10 @@ class RiskDashboard {
   }
 
   calculateStats() {
-    const totalCritical = mockRisks.filter(
+    const totalCritical = this.risks.filter(
       (r) => r.severity === "critical"
     ).length;
-    const totalActive = mockRisks.filter(
+    const totalActive = this.risks.filter(
       (r) => r.status === "active"
     ).length;
     const avgScore = Math.round(
@@ -255,7 +258,7 @@ class RiskDashboard {
   }
 
   renderLocationCard(location) {
-    const locationRisks = mockRisks.filter((r) => r.locationId === location.id);
+    const locationRisks = this.risks.filter((r) => r.locationId === location.id);
     const critical = locationRisks.filter((r) => r.severity === "critical").length;
     const high = locationRisks.filter((r) => r.severity === "high").length;
     const medium = locationRisks.filter((r) => r.severity === "medium").length;
@@ -381,7 +384,7 @@ class RiskDashboard {
           </div>
 
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <span style="font-size: 0.875rem; color: var(--card-foreground);">Showing ${filteredRisks.length} of ${mockRisks.length} risks</span>
+            <span style="font-size: 0.875rem; color: var(--card-foreground);">Showing ${filteredRisks.length} of ${this.risks.length} risks</span>
             ${hasFilters ? `<button id="clear-filters" style="padding: 0.5rem 0.75rem; background: var(--accent); color: var(--accent-foreground); border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem;">Clear Filters</button>` : ""}
           </div>
         </div>
