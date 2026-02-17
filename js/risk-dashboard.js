@@ -3,7 +3,6 @@
  * Displays risk management metrics and interactive dashboard
  */
 
-this.risks = []; // This will hold the risk data, ideally fetched from an API or database //
 
 const COLORS = {
   critical: "#dc2626",
@@ -17,6 +16,7 @@ const STATUS_ORDER = { resolved: 1, mitigated: 2, monitoring: 3, active: 4 };
 
 class RiskDashboard {
   constructor() {
+    this.risks = []; // This will hold the risk data, ideally fetched from an API or database //
     this.selectedLocation = "all";
     this.selectedSeverity = "all";
     this.selectedStatus = "all";
@@ -24,6 +24,27 @@ class RiskDashboard {
     this.selectedRisk = null;
     this.dialogOpen = false;
     this.currentTab = "overview";
+  }
+
+  // This is what "pulls" the data that feeds the following lines of code that render the dashboard. It simulates an API call by fetching a local JSON file, but in a real application, this would be where you connect to your backend or database.
+  async loadData() {
+    try {
+      // 1. Ask for the file
+      const response = await fetch('./data/risks.json');
+      
+      // 2. Wait for it to be converted to JSON
+      const data = await response.json();
+      
+      // 3. Put that data into our bucket
+      this.risks = data;
+      
+      // 4. IMPORTANT: Tell the dashboard to draw itself NOW that the bucket is full
+      this.render(); 
+      
+      console.log("Data loaded successfully:", this.risks);
+    } catch (error) {
+      console.error("The data failed to load. Check your file path!", error);
+    }
   }
 
   init() {
