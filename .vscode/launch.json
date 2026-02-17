@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Open dashboard.html",
+            "file": "${workspaceFolder}/dashboard.html"
+        }
+    ]
+}
+
+/** this is where the dependencies for the project are listed. It includes the icons, the framework, and the charts. 
+"dependencies": {
+  "lucide-react": "^0.284.0",  // The icons
+  "react": "^18.2.0",         // The framework
+  "recharts": "^2.8.0"        // The charts
+}
+  */

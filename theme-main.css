@@ -1,0 +1,42 @@
+:root {
+  /* --- Shared Constants (Don't change between themes) --- */
+  --font-size: 16px;
+  --radius: 0.625rem;
+  --primary: #006666;
+  --accent: #FFD700;
+  
+  /* --- Light Mode (Default) --- */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --sidebar: #ffffff;
+  /* ... other light variables ... */
+}
+
+/* Use a combined selector to ensure the Manual Toggle AND System Preference work */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) { 
+    /* Variables here apply if system is dark, unless you manually override with a .light class */
+    --background: #303747;
+    --foreground: #f8fafc;
+    /* ... dark variables ... */
+  }
+}
+
+/* This is what your JS toggle targets */
+[data-theme="dark"], .dark {
+  --background: #303747;
+  --foreground: #f8fafc;
+  --card: #0b1220;
+  --card-foreground: #f8fafc;
+  /* ... dark variables ... */
+}
+
+main {
+  padding-top: 2rem; /* Creates the buffer from the top bar */
+  padding-left: 2rem;
+  padding-right: 2rem;
+  /* Optional: make sure it doesn't get hidden under a fixed header */
+  display: block; 
+}
