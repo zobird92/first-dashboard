@@ -17,6 +17,7 @@ const STATUS_ORDER = { resolved: 1, mitigated: 2, monitoring: 3, active: 4 };
 class RiskDashboard {
   constructor() {
     this.risks = []; // This will hold the risk data, ideally fetched from an API or database //
+    this.locations = []; // This will hold the location data, ideally fetched from an API or database //
     this.selectedLocation = "all";
     this.selectedSeverity = "all";
     this.selectedStatus = "all";
@@ -30,18 +31,23 @@ class RiskDashboard {
   async loadData() {
     try {
       // 1. Ask for the file
-      const response = await fetch('./data/risks.json');
+      const [riskResponse, locationResponse] = await Promise.all([
+        fetch('./data/risks.json'),
+        fetch('./data/locations.json')
+      ]);
       
       // 2. Wait for it to be converted to JSON
-      const data = await response.json();
+      const risksData = await riskResponse.json();
+      const locationsData = await locationResponse.json();
       
       // 3. Put that data into our bucket
-      this.risks = data;
+      this.risks = risksData;
+      this.locations = locationsData;
       
       // 4. IMPORTANT: Tell the dashboard to draw itself NOW that the bucket is full
       this.render(); 
       
-      console.log("Data loaded successfully:", this.risks);
+      console.log("Everything Loaded!", {risks: this.risks, locations: this.locations});
     } catch (error) {
       console.error("The data failed to load. Check your file path!", error);
     }
@@ -162,12 +168,12 @@ class RiskDashboard {
       (r) => r.status === "active"
     ).length;
     const avgScore = Math.round(
-      siteLocations.reduce((sum, loc) => sum + loc.overallRiskScore, 0) /
-        siteLocations.length
+      this.locations.reduce((sum, loc) => sum + loc.overallRiskScore, 0) /
+        this.locations.length
     );
 
     return {
-      totalLocations: siteLocations.length,
+      totalLocations: this.locations.length,
       totalActive,
       totalCritical,
       averageRiskScore: avgScore,
@@ -252,7 +258,7 @@ class RiskDashboard {
   }
 
   renderRiskCard(risk) {
-    const location = siteLocations.find((l) => l.id === risk.locationId);
+    const location = this.locations.find((l) => l.id === risk.locationId);
     const locationName = location?.name || "Unknown";
 
     return `
@@ -347,7 +353,7 @@ class RiskDashboard {
       <div style="padding: 1.5rem;">
         <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Site Locations</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-          ${siteLocations.map((loc) => this.renderLocationCard(loc)).join("")}
+          ${this.locations.map((loc) => this.renderLocationCard(loc)).join("")}
         </div>
       </div>
     `;
@@ -377,7 +383,7 @@ class RiskDashboard {
               <label for="location-filter" style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--card-foreground);">Location</label>
               <select id="location-filter" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--background); color: var(--foreground); font-family: inherit;">
                 <option value="all">All Locations</option>
-                ${siteLocations.map((loc) => `<option value="${loc.id}" ${this.selectedLocation === loc.id ? "selected" : ""}>${loc.name}</option>`).join("")}
+                ${this.locations.map((loc) => `<option value="${loc.id}" ${this.selectedLocation === loc.id ? "selected" : ""}>${loc.name}</option>`).join("")}
               </select>
             </div>
 
@@ -432,7 +438,7 @@ class RiskDashboard {
   renderDialog() {
     if (!this.selectedRisk) return "";
 
-    const location = siteLocations.find(
+    const location = this.locations.find(
       (l) => l.id === this.selectedRisk.locationId
     );
     const locationName = location?.name || "Unknown";

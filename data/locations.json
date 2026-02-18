@@ -1,0 +1,74 @@
+[
+  {
+    "id": "loc-1",
+    "name": "Nevada National Security Site",
+    "type": ["experimentation"],
+    "description": "Supports the stewardship of the nuclear deterrent, providing emergency response capability and training, and contributing to key nonproliferation and arms control initiatives. It executes unique national-level experiments, supports national security customers, manages the legacy of the nuclear deterrent, and provide long-term environmental stewardship for site missions. ",
+    "address": "FF Rd,\n Amargosa Valley, NV 89020",
+    "riskCount": { "critical": 1, "high": 4, "medium": 6, "low": 3 },
+    "overallRiskScore": 58
+  },
+  {
+    "id": "loc-2",
+    "name": "Lawrence Livermore National Laboratory",
+    "type": ["research"],
+    "description": "Responsible for the safety and reliability of the nuclear explosives package in nuclear weapons. It supports surveillance, assessment, and refurbishment of the nuclear weapons stockpile. LLNL also possesses unique high-energy-density physics capabilities and scientific computing assets.",
+    "address": "7000 East Avenue,\n Livermore, CA 94550",
+    "riskCount": { "critical": 1, "high": 4, "medium": 6, "low": 3 },
+    "overallRiskScore": 58
+  },
+  {
+    "id": "loc-3",
+    "name": "Los Alamos National Laboratory",
+    "type": ["research", "manufacturing"],
+    "description": "Responsible for the safety and reliability of the nuclear explosives package in nuclear weapons. This lab possesses unique capabilities in neutron scattering, enhanced surveillance, radiography, and plutonium science and engineering.",
+    "address": "3200 Warehouse Blvd,\n Dallas, TX",
+    "riskCount": { "critical": 2, "high": 3, "medium": 5, "low": 6 },
+    "overallRiskScore": 51
+  },
+  {
+    "id": "loc-4",
+    "name": "Sandia National Laboratories ",
+    "type": ["research", "manufacturing"],
+    "description": "Responsible for the development, testing, and production of specialized nonnuclear components and quality assurance and systems engineering for all U.S. nuclear weapons. ",
+    "address": "1515 Eubank SE, Albuquerque, NM 87123\n7011 East Avenue, Livermore, CA 94550",
+    "riskCount": { "critical": 1, "high": 2, "medium": 7, "low": 5 },
+    "overallRiskScore": 45
+  },
+  {
+    "id": "loc-5",
+    "name": "Y-12",
+    "type": ["manufacturing"],
+    "description": "Only source of enriched uranium nuclear weapon components and provides enriched uranium for the U.S. Navy. It excels in materials science and precision manufacturing and stores enriched uranium. Y-12 supports efforts to reduce nuclear proliferation risk and performs work for other government agencies.",
+    "address": "Y-12 National Security Complex,\nP.O. Box 2009, Oak Ridge, TN 37831",
+    "riskCount": { "critical": 1, "high": 2, "medium": 7, "low": 5 },
+    "overallRiskScore": 45
+  },
+  {
+    "id": "loc-6",
+    "name": "Savannah River Site",
+    "type": ["manufacturing"],
+    "description": "Supplies and processes tritium, a radioactive form of hydrogen that is a key component of nuclear weapons. SRS loads tritium and non-tritium reservoirs; processes reservoirs; and recycles, extracts, and enriches tritium gas. SRS also plays a key role in NNSA's nonproliferation missions. ",
+    "address": "Savannah River Site,\n Aiken, SC 29808",
+    "riskCount": { "critical": 1, "high": 2, "medium": 7, "low": 5 },
+    "overallRiskScore": 45
+  },
+  {
+    "id": "loc-7",
+    "name": "Pantex Plant",
+    "type": ["manufacturing"],
+    "description": "Maintains the safety, security and effectiveness of the nation's nuclear weapons stockpile. Work performed at Pantex includes support of the nuclear weapons life extension programs; nuclear weapons dismantlement; the development, testing and fabrication of high explosive components; and interim storage and surveillance of plutonium pits.",
+    "address": "Pantex Plant,\nPO Box 30020, Amarillo, TX 79120",
+    "riskCount": { "critical": 1, "high": 2, "medium": 7, "low": 5 },
+    "overallRiskScore": 45
+  },
+  {
+    "id": "loc-8",
+    "name": "Kansas City National Security Campus",
+    "type": ["manufacturing"],
+    "description": "Responsible for manufacturing and procuring nonnuclear components for nuclear weapons, including electronic, mechanical, and engineered material components. High dependency factor.",
+    "address": "14520 Botts Road,\n Kansas City, MO 64147",
+    "riskCount": { "critical": 3, "high": 5, "medium": 8, "low": 4 },
+    "overallRiskScore": 72
+  }
+]
