@@ -1,5 +1,5 @@
 /* Add the below to html file to ensure both the style and theme css files are loaded. The theme.css file should be loaded first so that the variables are available for style.css 
-head>
+<head>
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="style.css">
 </head>*/

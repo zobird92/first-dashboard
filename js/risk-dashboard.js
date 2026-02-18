@@ -160,17 +160,21 @@ class RiskDashboard {
     });
   }
 
-  calculateStats() {
-    const totalCritical = this.risks.filter(
-      (r) => r.severity === "critical"
-    ).length;
-    const totalActive = this.risks.filter(
-      (r) => r.status === "active"
-    ).length;
-    const avgScore = Math.round(
-      this.locations.reduce((sum, loc) => sum + loc.overallRiskScore, 0) /
-        this.locations.length
-    );
+    calculateStats() {
+    const totalCritical = this.risks.filter((r) => r.severity === "critical").length;
+    const totalActive = this.risks.filter((r) => r.status === "active").length;
+
+    // 1. Calculate live scores for every location based on risk impact
+    const liveLocationScores = this.locations.map(loc => {
+      const locRisks = this.risks.filter(r => r.locationId === loc.id);
+      // Sum the 'impact' property of every risk at this location
+      return locRisks.reduce((sum, risk) => sum + (Number(risk.impact) || 0), 0);
+    });
+
+    // 2. Calculate the average of those live scores
+    const avgScore = liveLocationScores.length > 0 
+      ? Math.round(liveLocationScores.reduce((a, b) => a + b, 0) / liveLocationScores.length) 
+      : 0;
 
     return {
       totalLocations: this.locations.length,
@@ -236,8 +240,8 @@ class RiskDashboard {
     const headerData = [
       { label: "Total Locations", value: stats.totalLocations, icon: "🏢", type: 'locations' },
       { label: "Active Risks", value: stats.totalActive, icon: "⚠️", type: 'active' },
-      { label: "Critical Risks", value: stats.totalCritical, icon: "🔴", type: 'critical' },
-      { label: "Avg Risk Score", value: stats.averageRiskScore, icon: "🛡️", type: 'score' }
+      { label: "Critical Risks", value: stats.totalCritical, icon: "🚨", type: 'critical' },
+      { label: "Avg Risk Score", value: stats.averageRiskScore, icon: "📋", type: 'score' }
     ];
 
     return `
@@ -288,13 +292,16 @@ class RiskDashboard {
     // 1. This line is the "Link". It finds all risks belonging to THIS location.
     const locationRisks = this.risks.filter((r) => r.locationId === location.id);
 
-    // 2. These lines count the risks by severity
+    // 2. Calculate the live overall risk score for this location by summing the 'impact' of all its risks
+    const liveScore = locationRisks.reduce((sum, risk) => sum + (Number(risk.impact) || 0), 0);
+
+    // 3. These lines count the risks by severity
     const critical = locationRisks.filter((r) => r.severity === "critical").length;
     const high = locationRisks.filter((r) => r.severity === "high").length;
     const medium = locationRisks.filter((r) => r.severity === "medium").length;
     const low = locationRisks.filter((r) => r.severity === "low").length;
 
-    // 3. Let's calculate the TOTAL count
+    // 4. Let's calculate the TOTAL count
     const totalrisksatthislocation = locationRisks.length;
     
     return `
@@ -333,7 +340,7 @@ class RiskDashboard {
         </div>
 
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-          <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0;">Overall Risk Score: <strong style="color: var(--card-foreground);">${location.overallRiskScore}</strong></p>
+          <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0;">Overall Risk Score: <strong style="color: var(--card-foreground);">${liveScore}</strong></p>
         </div>
       </div>
     `;
