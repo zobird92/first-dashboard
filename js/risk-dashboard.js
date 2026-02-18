@@ -285,17 +285,25 @@ class RiskDashboard {
   }
 
   renderLocationCard(location) {
+    // 1. This line is the "Link". It finds all risks belonging to THIS location.
     const locationRisks = this.risks.filter((r) => r.locationId === location.id);
+
+    // 2. These lines count the risks by severity
     const critical = locationRisks.filter((r) => r.severity === "critical").length;
     const high = locationRisks.filter((r) => r.severity === "high").length;
     const medium = locationRisks.filter((r) => r.severity === "medium").length;
     const low = locationRisks.filter((r) => r.severity === "low").length;
 
+    // 3. Let's calculate the TOTAL count
+    const totalrisksatthislocation = locationRisks.length;
+    
     return `
       <div class="location-card" data-location-id="${location.id}" style="padding: 1.5rem; border: 1px solid var(--border); border-top: 4px solid var(--primary); border-radius: var(--radius); background: var(--card); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
-        <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--card-foreground); margin: 0 0 0.5rem 0;">${location.name}</h3>
-
-        <p style="font-size: 0.875rem; color: var(--muted-foreground); white-space: pre-line; margin-bottom: 1rem;">${location.address}</p>
+       <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--card-foreground); margin: 0 0 0.5rem 0;">${location.name}</h3>
+       
+       <p style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Total Risks: ${totalrisksatthislocation}</p>
+       
+       <p style="font-size: 0.875rem; color: var(--muted-foreground); white-space: pre-line; margin-bottom: 1rem;">${location.address}</p>
 
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
