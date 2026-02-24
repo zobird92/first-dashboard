@@ -367,7 +367,7 @@ class RiskDashboard {
     return `
       <div style="padding: 1.5rem;">
         <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Site Locations</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
           ${this.locations.map((loc) => this.renderLocationCard(loc)).join("")}
         </div>
       </div>
