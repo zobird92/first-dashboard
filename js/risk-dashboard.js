@@ -350,7 +350,7 @@ class RiskDashboard {
   renderOverviewTab() {
     return `
       <div style="padding: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Dashboard Overview</h2>
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0; text-align: center;">Dashboard Overview</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
           <div style="background: var(--card); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); min-height: 300px;">
             <h3 style="font-size: 1rem; color: var(--card-foreground); margin-bottom: 1rem;">Risk Severity Distribution</h3>
