@@ -60,16 +60,16 @@ class RiskDashboard {
   }
 
   setupEventListeners() {
-    // Tab navigation
+    // 1. Tab Navigation (The new buttons in your index.html)
     document.addEventListener("click", (e) => {
       const tab = e.target.closest("[data-tab]");
       if (tab) {
         this.currentTab = tab.dataset.tab;
-        this.render();
+        this.render(); 
       }
     });
 
-    // Filters
+    // 2. Filters (Location, Severity, Status)
     document.addEventListener("change", (e) => {
       if (e.target.id === "location-filter") {
         this.selectedLocation = e.target.value;
@@ -85,7 +85,7 @@ class RiskDashboard {
       }
     });
 
-    // Search
+    // 3. Search Input
     document.addEventListener("input", (e) => {
       if (e.target.id === "search-input") {
         this.searchQuery = e.target.value;
@@ -93,7 +93,7 @@ class RiskDashboard {
       }
     });
 
-    // Clear filters button
+    // 4. Clear Filters Button
     document.addEventListener("click", (e) => {
       if (e.target.id === "clear-filters") {
         this.selectedLocation = "all";
@@ -104,7 +104,7 @@ class RiskDashboard {
       }
     });
 
-    // Risk card clicks
+    // 5. Risk Card Clicks (Open Dialog)
     document.addEventListener("click", (e) => {
       const riskCard = e.target.closest("[data-risk-id]");
       if (riskCard) {
@@ -114,15 +114,15 @@ class RiskDashboard {
       }
     });
 
-    // Close dialog
+    // 6. Close Dialog
     document.addEventListener("click", (e) => {
-      if (e.target.id === "close-dialog") {
+      if (e.target.id === "close-dialog" || e.target.id === "dialog-backdrop") {
         this.selectedRisk = null;
         this.render();
       }
     });
 
-    // Location card clicks
+    // 7. Location Card Clicks (Jump to Risks Tab)
     document.addEventListener("click", (e) => {
       const locCard = e.target.closest("[data-location-id]");
       if (locCard && this.currentTab === "locations") {
@@ -132,7 +132,7 @@ class RiskDashboard {
         this.render();
       }
     });
-  }
+  } // <--- This one closing brace now correctly ends the function
 
   getFilteredRisks() {
     return this.risks.filter((risk) => {
@@ -235,6 +235,7 @@ class RiskDashboard {
   }
 
   renderHeaderStats() {
+    
     const stats = this.calculateStats();
     
     const headerData = [
@@ -245,7 +246,7 @@ class RiskDashboard {
     ];
 
     return `
-      <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 2rem; position: sticky; top: 65px; z-index: 10;">
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 2rem; position: sticky; top: 110px; z-index: 10;">
           ${headerData.map(item => `
         <div class="card" style="flex: 1; min-width: 200px; padding: 1rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -514,37 +515,28 @@ class RiskDashboard {
 
     const tabContent = (() => {
       switch (this.currentTab) {
-        case "overview":
-          return this.renderOverviewTab();
-        case "locations":
-          return this.renderLocationsTab();
-        case "risks":
-          return this.renderRisksTab();
-        case "mitigation":
-          return this.renderMitigationTab();
-        default:
-          return this.renderOverviewTab();
+        case "overview": return this.renderOverviewTab();
+        case "locations": return this.renderLocationsTab();
+        case "risks": return this.renderRisksTab();
+        case "mitigation": return this.renderMitigationTab();
+        default: return this.renderOverviewTab();
       }
     })();
 
     main.innerHTML = `
       ${this.renderHeaderStats()}
-
       <div style="margin: 0 2rem;">
-        <div style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 1.5rem;">
-          <button data-tab="overview" style="padding: 1rem 1.5rem; border: none; background: none; color: ${this.currentTab === "overview" ? "var(--primary)" : "var(--muted-foreground)"}; border-bottom: ${this.currentTab === "overview" ? "2px solid var(--primary)" : "2px solid transparent"}; cursor: pointer; font-weight: 500; transition: all 0.2s;">Overview</button>
-          <button data-tab="locations" style="padding: 1rem 1.5rem; border: none; background: none; color: ${this.currentTab === "locations" ? "var(--primary)" : "var(--muted-foreground)"}; border-bottom: ${this.currentTab === "locations" ? "2px solid var(--primary)" : "2px solid transparent"}; cursor: pointer; font-weight: 500; transition: all 0.2s;">Locations</button>
-          <button data-tab="risks" style="padding: 1rem 1.5rem; border: none; background: none; color: ${this.currentTab === "risks" ? "var(--primary)" : "var(--muted-foreground)"}; border-bottom: ${this.currentTab === "risks" ? "2px solid var(--primary)" : "2px solid transparent"}; cursor: pointer; font-weight: 500; transition: all 0.2s;">Risk Details</button>
-          <button data-tab="mitigation" style="padding: 1rem 1.5rem; border: none; background: none; color: ${this.currentTab === "mitigation" ? "var(--primary)" : "var(--muted-foreground)"}; border-bottom: ${this.currentTab === "mitigation" ? "2px solid var(--primary)" : "2px solid transparent"}; cursor: pointer; font-weight: 500; transition: all 0.2s;">Mitigation</button>
-        </div>
-
         ${tabContent}
       </div>
-
       ${this.renderDialog()}
     `;
-  }
-}
+
+    // This updates the gold underline on your buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active-tab', btn.dataset.tab === this.currentTab);
+    });
+  } // <--- This closes the render() function
+} // <--- This closes the RiskDashboard class (IMPORTANT!)
 
 // Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", () => {

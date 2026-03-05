@@ -22,7 +22,7 @@ body {
 main {
   background-color: var(--background, #ffffff);
   color: var(--foreground, #0f172a);
-  min-height: calc(100vh - 65px);
+  min-height: calc(100vh - 110px);
 }
 
 .card {
@@ -36,13 +36,54 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--primary, #006666);
-  color: var(--primary-foreground, #ffffff);
+  
+  /* Background Image with Darker Overlay for better contrast */
+  background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url('../data/banner.jpg');
+  background-size: cover;
+  background-position: center;
+  
+  min-height: 110px; /* Slightly taller to accommodate the large 2.0rem title */
   padding: 0 2rem;
-  height: 65px;
+  
+  color: #ffffff;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+
+  /* Adds a smooth stop to the sticky behavior */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Update this to handle the buttons in the bar */
+.top-menu-item {
+  background: transparent; /* Makes the button background invisible */
+  border: none;            /* Removes the default button border */
+  cursor: pointer;         /* Makes it look clickable */
+  color: white;
+  margin-right: 1.0rem;
+  font-weight: 500;
+  font-family: inherit;    /* Uses your Inter font */
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent; /* Prepare for the active line */
+}
+
+.top-menu-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* This is the magic for the active tab */
+.top-menu-item.active-tab {
+  border-bottom: 3px solid var(--accent, #FFD700);
+  opacity: 1;
+}
+
+/* 3. ENSURE LINKS ARE VISIBLE */
+.top-bar a, .top-bar .app-title {
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .app-title {
@@ -104,15 +145,29 @@ main {
 }
 
 #theme-toggle {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
+  /* This creates the frosted glass effect */
+  background-color: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  color: #F0823E;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  
   text-align: center;
-  font-size: larger;
+  font-size: 1rem; /* Adjusted from larger for better fit */
   font-weight: bold;
-  width: 160px;
+  width: 170px;
   flex-shrink: 0;
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 button, input {
