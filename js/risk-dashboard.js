@@ -246,7 +246,20 @@ class RiskDashboard {
     ];
 
     return `
-      <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 2rem; position: sticky; top: 110px; z-index: 10;">
+      <div style="
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 1rem;
+        margin: 0;
+        padding: 1rem 2rem;
+        position: sticky;
+        top: 60px;
+        z-index: 100;
+        background: var(--background);
+        border-bottom: 1px solid var(--border);
+      ">
+
           ${headerData.map(item => `
         <div class="card" style="flex: 1; min-width: 200px; padding: 1rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -350,7 +363,7 @@ class RiskDashboard {
   renderOverviewTab() {
     return `
       <div style="padding: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0; text-align: center;">Dashboard Overview</h2>
+        <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Dashboard Overview</h2>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
           <div style="background: var(--card); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); min-height: 300px;">
             <h3 style="font-size: 1rem; color: var(--card-foreground); margin-bottom: 1rem;">Risk Severity Distribution</h3>
@@ -522,11 +535,13 @@ class RiskDashboard {
         default: return this.renderOverviewTab();
       }
     })();
-
+  // We use a container div with margin: auto to center the content
     main.innerHTML = `
-      ${this.renderHeaderStats()}
-      <div style="margin: 0 2rem;">
-        ${tabContent}
+      <div style="width: 100%;">
+        ${this.renderHeaderStats()}
+        <div style="margin: 0 2rem;">
+          ${tabContent}
+        </div>
       </div>
       ${this.renderDialog()}
     `;
@@ -535,8 +550,8 @@ class RiskDashboard {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active-tab', btn.dataset.tab === this.currentTab);
     });
-  } // <--- This closes the render() function
-} // <--- This closes the RiskDashboard class (IMPORTANT!)
+  } // Ends render
+} // Ends RiskDashboard Class
 
 // Initialize on DOM ready
 document.addEventListener("DOMContentLoaded", () => {

@@ -17,22 +17,28 @@
 </head>
 
 <body>
-    <header class="top-bar">   
-        <div class="top-bar-left">
-            <nav class="top-menu">
-                <button data-tab="overview" class="top-menu-item tab-btn">Overview</button>
-                <button data-tab="locations" class="top-menu-item tab-btn">Locations</button>
-                <button data-tab="risks" class="top-menu-item tab-btn">Risk Details</button>
-                <button data-tab="mitigation" class="top-menu-item tab-btn">Mitigation</button>
-            </nav> 
-        </div>
+    <header class="top-bar" style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0.5rem 2rem; position: sticky; top: 0; z-index: 1000; background: var(--card); border-bottom: 1px solid var(--border);">
         
-        <div class="top-bar-right">
-            <span class="app-title">NEA Risk Management Dashboard</span>
-        </div>
-       
-        <button id="theme-toggle" class="accent">Toggle Dark Mode</button>
-    </header>
+    <div class="top-bar-left" style="display: flex; justify-content: flex-start;">
+        <nav class="top-menu" style="display: flex; gap: 0.75rem; white-space: nowrap;">
+            <button data-tab="overview" class="top-menu-item tab-btn">Overview</button>
+            <button data-tab="locations" class="top-menu-item tab-btn">Locations</button>
+            <button data-tab="risks" class="top-menu-item tab-btn">Risk Details</button>
+            <button data-tab="mitigation" class="top-menu-item tab-btn">Mitigation</button>
+        </nav> 
+    </div>
+    
+    <div class="top-bar-center" style="text-align: center; white-space: nowrap; padding: 0 1rem;">
+        <span class="app-title" style="font-size: 1.75rem; font-weight: 700;letter-spacing: -0.025em; color: var(--foreground); text-transform: uppercase;">
+            NEA Risk Management Dashboard
+        </span>
+    </div>
+    
+    <div class="top-bar-right" style="display: flex; justify-content: flex-end;">
+        <button id="theme-toggle" class="accent" style="padding: 0.5rem 1rem; cursor: pointer;">Toggle Dark Mode</button>
+    </div>
+
+</header>
     
     <main>
         <!-- Risk Dashboard will be rendered here -->
