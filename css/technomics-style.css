@@ -20,9 +20,11 @@ body {
 }
 
 main {
-  background-color: var(--background, #ffffff);
+  background-color: transparent; /* Allow body background to show through */
   color: var(--foreground, #0f172a);
   min-height: calc(100vh - 110px);
+  position: relative;
+  z-index: 1;
 }
 
 .card {

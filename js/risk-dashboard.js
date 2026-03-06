@@ -252,11 +252,12 @@ class RiskDashboard {
         overflow-x: auto;
         gap: 1rem;
         margin: 0;
-        padding: 1rem 2rem;
+        padding: 1.5rem 2rem;
         position: sticky;
-        top: 60px;
-        z-index: 100;
-        background: var(--background);
+        top: 110px;
+        z-index: 99;
+        background: rgba(255, 255, 255, 0.05); /* Very slight tint */
+        backdrop-filter: blur(4px); /* Optional: slight glass effect */
         border-bottom: 1px solid var(--border);
       ">
 
@@ -264,16 +265,16 @@ class RiskDashboard {
         <div class="card" style="flex: 1; min-width: 200px; padding: 1rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <p style="color: var(--muted-foreground); margin: 0; font-size: 1rem; font-weight: 500; white-space: nowrap;">${item.label}</p>
-              <p style="font-size: 2.5rem; font-weight: 800; color: ${this.getDynamicColor(item.type, item.value)}; margin: -4px 0 0 0;">${item.value}</p>
+              <p style="color: var(--muted-foreground); margin: 0; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em;">${item.label}</p>
+              <p style="font-size: 2.25rem; font-weight: 800; color: ${this.getDynamicColor(item.type, item.value)}; margin: -2px 0 0 0;">${item.value}</p>
             </div>
-            <span style="font-size: 2.5rem; opacity: 0.8;">${item.icon}</span>
+            <span style="font-size: 2rem; opacity: 0.9;">${item.icon}</span>
           </div>
         </div>
           `).join('')}
       </div>
     `;
-  }
+}
 
   renderRiskCard(risk) {
     const location = this.locations.find((l) => l.id === risk.locationId);
