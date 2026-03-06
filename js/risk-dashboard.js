@@ -363,19 +363,25 @@ class RiskDashboard {
 
   renderOverviewTab() {
     return `
-      <div style="padding: 1.5rem;">
-        <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Dashboard Overview</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-          <div style="background: var(--card); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); min-height: 300px;">
-            <h3 style="font-size: 1rem; color: var(--card-foreground); margin-bottom: 1rem;">Risk Severity Distribution</h3>
-            <canvas id="severityChart"></canvas>
+    <div style="padding: 1.5rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Dashboard Overview</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        
+        <div class="card" style="padding: 1.5rem; height: 400px; display: flex; flex-direction: column; overflow: hidden;">
+          <h3 style="font-size: 1rem; color: var(--card-foreground); margin-bottom: 1rem;">Risk Severity Distribution</h3>
+          <div style="flex: 1; position: relative; height: 300px;"> <canvas id="severityChart"></canvas>
           </div>
-          
-          <div style="background: var(--card); padding: 2rem; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; color: var(--muted-foreground);">
-            <p>📊 Chart visualizations coming soon</p>
+        </div>
+        
+        <div class="card" style="padding: 1.5rem; height: 400px; display: flex; flex-direction: column; overflow: hidden;">
+          <h3 style="font-size: 1rem; margin-bottom: 1rem;">Risks by Category</h3>
+          <div style="flex: 1; position: relative; height: 300px;"> <canvas id="categoryChart"></canvas>
           </div>
+        </div>
+
       </div>
-    `;
+    </div>
+  `;
   }
 
   renderLocationsTab() {
@@ -447,7 +453,19 @@ class RiskDashboard {
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem;">
-          ${filteredRisks.length > 0 ? filteredRisks.map((risk) => this.renderRiskCard(risk)).join("") : `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--muted-foreground);">No risks found matching the current filters.</div>`}
+          ${filteredRisks.length > 0 
+            ? filteredRisks.map((risk) => this.renderRiskCard(risk)).join("") 
+            : `
+              <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: var(--card); border: 2px dashed var(--border); border-radius: var(--radius);">
+                <p style="font-size: 2.5rem; margin: 0;">🔍</p>
+                <h3 style="margin: 1rem 0 0.5rem 0; color: var(--card-foreground); font-weight: 600;">No risks match your search</h3>
+                <p style="color: var(--card-foreground); margin-bottom: 1.5rem;">Try adjusting your filters or clearing your search term.</p>
+                <button id="clear-filters" style="padding: 0.6rem 1.2rem; background: var(--primary); color: var(--primary-foreground); border: none; border-radius: 0.375rem; cursor: pointer; font-weight: 500; transition: opacity 0.2s;">
+                  Clear All Filters
+                </button>
+              </div>
+            `
+          }
         </div>
       </div>
     `;
@@ -523,9 +541,15 @@ class RiskDashboard {
     `;
   }
 
-  render() {
+ render() {
     const main = document.querySelector("main");
     if (!main) return;
+
+    // --- STEP 1: SAVE FOCUS STATE ---
+    // Check if the user is currently typing in an input (like search)
+    const activeElementId = document.activeElement ? document.activeElement.id : null;
+    const selectionStart = document.activeElement ? document.activeElement.selectionStart : null;
+    const selectionEnd = document.activeElement ? document.activeElement.selectionEnd : null;
 
     const tabContent = (() => {
       switch (this.currentTab) {
@@ -536,7 +560,8 @@ class RiskDashboard {
         default: return this.renderOverviewTab();
       }
     })();
-  // We use a container div with margin: auto to center the content
+
+    // --- STEP 2: UPDATE THE DOM ---
     main.innerHTML = `
       <div style="width: 100%;">
         ${this.renderHeaderStats()}
@@ -547,11 +572,173 @@ class RiskDashboard {
       ${this.renderDialog()}
     `;
 
-    // This updates the gold underline on your buttons
+    // --- STEP 3: RESTORE FOCUS STATE ---
+    // If the element we were just in still exists (by ID), put the cursor back
+    if (activeElementId) {
+      const elementToFocus = document.getElementById(activeElementId);
+      if (elementToFocus) {
+        elementToFocus.focus();
+        // This prevents the cursor from jumping to the start of the word
+        if (selectionStart !== null && elementToFocus.setSelectionRange) {
+          elementToFocus.setSelectionRange(selectionStart, selectionEnd);
+        }
+      }
+    }
+
+    // --- STEP 4: UI UPDATES (Tabs & Charts) ---
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active-tab', btn.dataset.tab === this.currentTab);
     });
-  } // Ends render
+
+    if (this.currentTab === 'overview') {
+        this.initCharts();
+    }
+  }
+
+  initCharts() {
+    const severityCtx = document.getElementById('severityChart');
+    if (!severityCtx) return;
+
+    const existingChart = Chart.getChart(severityCtx);
+    if (existingChart) existingChart.destroy();
+
+    const counts = {
+      critical: this.risks.filter(r => r.severity === 'critical').length,
+      high: this.risks.filter(r => r.severity === 'high').length,
+      medium: this.risks.filter(r => r.severity === 'medium').length,
+      low: this.risks.filter(r => r.severity === 'low').length
+    };
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    new Chart(severityCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Critical', 'High', 'Medium', 'Low'],
+        datasets: [{
+          data: [counts.critical, counts.high, counts.medium, counts.low],
+          backgroundColor: [COLORS.critical, COLORS.high, COLORS.medium, COLORS.low],
+          hoverOffset: 15,
+          borderWidth: 2,
+          borderColor: 'white'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const severityLabels = ['critical', 'high', 'medium', 'low'];
+            this.selectedSeverity = severityLabels[index];
+            this.currentTab = 'risks';
+            this.render();
+          }
+        },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const value = context.raw;
+                const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return ` ${context.label}: ${value} (${percent}%)`;
+              }
+            }
+          }
+        },
+        cutout: '70%',
+      }
+    });
+
+    // Start the Category Chart immediately after
+    this.initCategoryChart();
+  }
+  initCategoryChart() {
+    const categoryCtx = document.getElementById('categoryChart');
+    if (!categoryCtx) return;
+
+    const existingChart = Chart.getChart(categoryCtx);
+    if (existingChart) existingChart.destroy();
+
+    // 1. Get all unique categories for the Y-axis labels
+    const categories = [...new Set(this.risks.map(r => r.category))];
+
+    // 2. Create a dataset for every location
+    // We'll use a simple color generator or a fixed palette
+    const locationPalette = [
+      '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', 
+      '#10b981', '#6366f1', '#f43f5e', '#14b8a6'
+    ];
+
+    const datasets = this.locations.map((loc, index) => {
+      // For this specific location, count risks in each category
+      const data = categories.map(cat => {
+        return this.risks.filter(r => r.locationId === loc.id && r.category === cat).length;
+      });
+
+      return {
+        label: loc.name,
+        data: data,
+        backgroundColor: locationPalette[index % locationPalette.length],
+        borderRadius: 0
+      };
+    });
+
+    new Chart(categoryCtx, {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: datasets
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const clickedCategory = categories[index];
+            this.searchQuery = clickedCategory;
+            this.currentTab = 'risks';
+            this.render();
+          }
+        },
+        plugins: {
+          legend: { 
+            position: 'bottom',
+            labels: { boxWidth: 12, padding: 15, font: { size: 11 } }
+          },
+          tooltip: {
+            mode: 'nearest',
+            intersect: true,
+            callbacks: {
+              label: (context) => {
+                const locationName = context.dataset.label;
+                const categoryName = context.label;
+                const value = context.raw;
+                const categoryTotal = context.chart.data.datasets.reduce((sum, ds) => {
+                  return sum + ds.data[context.dataIndex];
+                }, 0);
+                const percent = categoryTotal > 0 ? ((value / categoryTotal) * 100).toFixed(1) : 0;
+                return ` ${locationName}: ${value} (${percent}% of ${categoryName})`;
+              }
+            }
+          }
+        }, // <--- Plugins ends here
+        scales: { // <--- Scales is a direct child of 'options'
+          x: { 
+            stacked: true, 
+            beginAtZero: true, 
+            ticks: { stepSize: 1 },
+            title: { display: true, text: 'Number of Risks', font: { size: 10 } }
+          },
+          y: { 
+            stacked: true 
+          }
+        }
+      }
+    });
+  } // Ends initCategoryChart
 } // Ends RiskDashboard Class
 
 // Initialize on DOM ready
