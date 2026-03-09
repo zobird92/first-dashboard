@@ -130,17 +130,13 @@ h1, h2, h3, h4, p, span, div {
 }
 .location-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  /* Forces 4 columns on desktop, but ensures they don't get smaller than 280px */
+  grid-template-columns: repeat(4, 1fr); 
   gap: 1.5rem;
   padding: 1rem 0;
+  width: 100%;
 }
 
-/* Optional: stack them on smaller tablet screens */
-@media (max-width: 1024px) {
-  .location-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
 /* The risk entry card */
 .risk-card {
   background-color: var(--card);

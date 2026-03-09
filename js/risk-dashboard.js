@@ -163,6 +163,12 @@ class RiskDashboard {
       if (value <= 50) return COLORS.high;
       return COLORS.critical;
     }
+    if (type === 'count') {
+      if (value <= 4) return COLORS.low;
+      if (value <= 5) return COLORS.medium;
+      if (value <= 6) return COLORS.high;
+      return COLORS.critical;
+    }
     return "var(--foreground)";
   }
 
@@ -272,14 +278,22 @@ class RiskDashboard {
 
   renderLocationsTab() {
   const cardsHtml = this.locations.map(loc => {
-    // 1. Filter risks for this specific location
+    // 1. Filter risks for this location
     const locationRisks = this.risks.filter(r => r.locationId === loc.id);
+    const riskCount = locationRisks.length;
     
-    // 2. SUM CALCULATION: Total of all risk impacts for this site
+    // 2. Sum the impact of all risks for this site
     const siteScore = locationRisks.reduce((sum, r) => sum + (Number(r.impact) || 0), 0);
 
-    // 3. Pass the count and the new total sum to the card component
-    return renderLocationCard(loc, locationRisks.length, siteScore);
+    // 3. Establish dynamic colors using the dashboard's internal logic
+    // countColor follows the 'active' thresholds (10/15/20)
+    const countColor = this.getDynamicColor('count', riskCount);
+    
+    // scoreColor follows the 'score' thresholds (15/30/50)
+    const scoreColor = this.getDynamicColor('score', siteScore);
+
+    // 4. Return the component string
+    return renderLocationCard(loc, riskCount, siteScore, scoreColor, countColor);
   }).join('');
 
   return `
@@ -316,7 +330,7 @@ class RiskDashboard {
     main.innerHTML = `
       <div style="width: 100%;">
         ${this.renderHeaderStats()}
-        <div style="max-width: 1400px; margin: 0 auto; padding: 0 2rem;">
+        <div style="max-width: 1600px; margin: 0 auto; padding: 0 2rem;">
           ${tabContent}
         </div>
       </div>
