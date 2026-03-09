@@ -130,10 +130,9 @@ h1, h2, h3, h4, p, span, div {
 }
 .location-grid {
   display: grid;
-  /* Forces 4 columns. Use 1fr to make them equal width */
-  grid-template-columns: repeat(4, 1fr); 
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
-  margin-top: 1rem;
+  padding: 1rem 0;
 }
 
 /* Optional: stack them on smaller tablet screens */

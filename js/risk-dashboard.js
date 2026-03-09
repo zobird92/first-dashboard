@@ -106,17 +106,19 @@ class RiskDashboard {
   const totalCritical = this.risks.filter((r) => r.severity === "critical").length;
   const totalActive = this.risks.filter((r) => r.status === "active").length;
   
-  // Calculate a true average by summing all individual risk impacts
+  // Calculate the total impact of every risk in the system
   const totalImpact = this.risks.reduce((sum, risk) => sum + (Number(risk.impact) || 0), 0);
-  const avgScore = this.risks.length > 0 
-    ? (totalImpact / this.risks.length).toFixed(1) 
+  
+  // Average Site Score = Total System Impact / Number of Locations
+  const avgSiteScore = this.locations.length > 0 
+    ? (totalImpact / this.locations.length).toFixed(1) 
     : "0.0";
 
   return { 
     totalLocations: this.locations.length, 
     totalActive, 
     totalCritical, 
-    averageRiskScore: avgScore 
+    averageRiskScore: avgSiteScore 
   };
 }
 
@@ -269,20 +271,23 @@ class RiskDashboard {
   }
 
   renderLocationsTab() {
-  return `
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-      ${this.locations.map(loc => {
-        // Filter risks for this specific location
-        const locationRisks = this.risks.filter(r => r.locationId === loc.id);
-        
-        // Calculate the specific site score dynamically
-        const siteScore = locationRisks.length > 0
-          ? (locationRisks.reduce((sum, r) => sum + (Number(r.impact) || 0), 0) / locationRisks.length).toFixed(1)
-          : "0.0";
+  const cardsHtml = this.locations.map(loc => {
+    // 1. Filter risks for this specific location
+    const locationRisks = this.risks.filter(r => r.locationId === loc.id);
+    
+    // 2. SUM CALCULATION: Total of all risk impacts for this site
+    const siteScore = locationRisks.reduce((sum, r) => sum + (Number(r.impact) || 0), 0);
 
-        // Pass the count and the calculated score to the component
-        return renderLocationCard(loc, locationRisks.length, siteScore);
-      }).join('')}
+    // 3. Pass the count and the new total sum to the card component
+    return renderLocationCard(loc, locationRisks.length, siteScore);
+  }).join('');
+
+  return `
+    <div style="padding: 2rem 0;">
+      <h2 style="margin-bottom: 1.5rem;">Regional Risk Centers</h2>
+      <div class="location-grid">
+        ${cardsHtml}
+      </div>
     </div>
   `;
 }
