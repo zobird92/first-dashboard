@@ -3,7 +3,7 @@
  */
 export function renderLocationCard(location, totalRisks, siteScore, scoreColor, countColor) {
   return `
-    <div class="location-card" data-location-id="${location.id}" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); border-top: 5px solid var(--primary); cursor: pointer; transition: transform 0.2s;">
+    <div class="location-card" data-location-id="${location.id}" style="padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); border-top: 5px solid ${scoreColor}; cursor: pointer; transition: transform 0.2s;">
       <div style="margin-bottom: 1rem;">
         <h3 style="margin: 0; color: var(--foreground); font-size: 1.25rem;">${location.name}</h3>
         <p style="font-size: 0.85rem; color: var(--muted-foreground); margin-top: 0.25rem; line-height: 1.4;">${location.address}</p>
