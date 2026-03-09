@@ -1,233 +1,47 @@
-import { Risk } from "./RiskCard";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import {
-  CalendarDays,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  AlertTriangle,
-  ArrowRight,
-} from "lucide-react";
+export function renderRiskDialog(risk, locationName, COLORS) {
+  if (!risk) return "";
 
-/**
- * @typedef {Object} RiskDetailsDialogProps
- * @property {Risk | null} risk
- * @property {string} locationName
- * @property {boolean} open
- * @property {(open: boolean) => void} onOpenChange
- */
-
-const severityColors = {
-  critical: "bg-red-600 text-white",
-  high: "bg-orange-500 text-white",
-  medium: "bg-yellow-500 text-black",
-  low: "bg-green-500 text-white",
-};
-
-const statusColors = {
-  active: "bg-red-100 text-red-800 border-red-300",
-  mitigated: "bg-blue-100 text-blue-800 border-blue-300",
-  monitoring: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  resolved: "bg-green-100 text-green-800 border-green-300",
-};
-
-export function RiskDetailsDialog({
-  risk,
-  locationName,
-  open,
-  onOpenChange,
-}) {
-  if (!risk) return null;
-
-  const getTrendIcon = () => {
-    switch (risk.trend) {
-      case "increasing":
-        return <TrendingUp className="h-5 w-5 text-red-500" />;
-      case "decreasing":
-        return (
-          <TrendingDown className="h-5 w-5 text-green-500" />
-        );
-      default:
-        return <Minus className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-6 w-6 text-orange-500 mt-1 flex-shrink-0" />
-            <div className="flex-1">
-              <DialogTitle className="text-2xl mb-2">
-                {risk.title}
-              </DialogTitle>
-              <DialogDescription className="text-base">
-                {locationName}
-              </DialogDescription>
-            </div>
-            <Badge className={severityColors[risk.severity]}>
-              {risk.severity.toUpperCase()}
-            </Badge>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-6 mt-4">
+  return `
+    <div id="dialog-backdrop" style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(4px);">
+      <div id="dialog-content" style="background: var(--card); border-radius: var(--radius); width: 90%; max-width: 650px; max-height: 90vh; overflow-y: auto; position: relative; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+        
+        <div style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <h3 className="text-sm mb-2 text-gray-500">
-              Description
-            </h3>
-            <p className="text-base">{risk.description}</p>
+            <h2 style="margin: 0; font-size: 1.5rem; color: var(--card-foreground);">${risk.title}</h2>
+            <p style="margin: 0.5rem 0 0; color: var(--muted-foreground); font-size: 0.9rem;">${locationName} • ${risk.category}</p>
+          </div>
+          <button id="close-dialog" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted-foreground);">&times;</button>
+        </div>
+
+        <div style="padding: 1.5rem;">
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 0.5rem;">Description</h3>
+            <p style="margin: 0; line-height: 1.6;">${risk.description}</p>
           </div>
 
-          <Separator />
-
-          <div className="grid grid-cols-2 gap-6">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--secondary); border-radius: var(--radius);">
             <div>
-              <h3 className="text-sm mb-2 text-gray-500">
-                Category
-              </h3>
-              <Badge
-                variant="outline"
-                className="text-base px-3 py-1"
-              >
-                {risk.category}
-              </Badge>
+              <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">SEVERITY</p>
+              <p style="margin: 0; font-weight: 600; color: ${COLORS[risk.severity]}">${risk.severity.toUpperCase()}</p>
             </div>
             <div>
-              <h3 className="text-sm mb-2 text-gray-500">
-                Status
-              </h3>
-              <Badge
-                variant="outline"
-                className={`text-base px-3 py-1 ${statusColors[risk.status]}`}
-              >
-                {risk.status.toUpperCase()}
-              </Badge>
+              <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">STATUS</p>
+              <p style="margin: 0; font-weight: 600;">${risk.status.toUpperCase()}</p>
             </div>
           </div>
 
-          <Separator />
-
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <h3 className="text-sm mb-2 text-gray-500">
-                Impact Score
-              </h3>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl">{risk.impact}</span>
-                <span className="text-gray-500">/10</span>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm mb-2 text-gray-500">
-                Likelihood
-              </h3>
-              <p className="text-xl capitalize">
-                {risk.likelihood.replace("-", " ")}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm mb-2 text-gray-500">
-                Trend
-              </h3>
-              <div className="flex items-center gap-2">
-                {getTrendIcon()}
-                <span className="text-xl capitalize">
-                  {risk.trend}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Mitigation Impact Section */}
           <div>
-            <h3 className="text-sm mb-3 text-gray-500">
-              Mitigation Impact
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <p className="text-xs text-gray-600 mb-2">
-                  Severity Assessment
-                </p>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    className={
-                      severityColors[risk.initialSeverity]
-                    }
-                  >
-                    {risk.initialSeverity}
-                  </Badge>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                  <Badge
-                    className={severityColors[risk.severity]}
-                  >
-                    {risk.severity}
-                  </Badge>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {risk.initialSeverity === risk.severity
-                    ? "No change in severity"
-                    : "Severity reduced"}
-                </p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <p className="text-xs text-gray-600 mb-2">
-                  Likelihood Assessment
-                </p>
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="capitalize px-2 py-1 bg-gray-300 rounded">
-                    {risk.initialLikelihood.replace("-", " ")}
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                  <span className="capitalize px-2 py-1 bg-gray-300 rounded">
-                    {risk.likelihood.replace("-", " ")}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {risk.initialLikelihood === risk.likelihood
-                    ? "No change in likelihood"
-                    : "Likelihood reduced"}
-                </p>
-              </div>
+            <h3 style="font-size: 0.8rem; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 0.5rem;">Mitigation Plan</h3>
+            <div style="padding: 1rem; border-left: 4px solid var(--primary); background: rgba(0, 102, 102, 0.05);">
+              <p style="margin: 0; font-style: italic;">${risk.mitigationPlan || "No mitigation plan currently on file."}</p>
             </div>
-          </div>
-
-          {risk.mitigationPlan && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="text-sm mb-2 text-gray-500">
-                  Mitigation Plan
-                </h3>
-                <p className="text-base bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  {risk.mitigationPlan}
-                </p>
-              </div>
-            </>
-          )}
-
-          <Separator />
-
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <CalendarDays className="h-4 w-4" />
-            <span>
-              Last updated:{" "}
-              {new Date(risk.lastUpdated).toLocaleDateString()}
-            </span>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
-  );
+
+        <div style="padding: 1rem 1.5rem; background: var(--secondary); border-top: 1px solid var(--border); text-align: right;">
+          <span style="font-size: 0.8rem; color: var(--muted-foreground);">Last Updated: ${risk.lastUpdated}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }

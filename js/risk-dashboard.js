@@ -3,7 +3,7 @@
  * Displays risk management metrics and interactive dashboard
  */
 
-
+import { renderRiskDialog } from './risk-details-dialog.js';
 const COLORS = {
   critical: "#dc2626",
   high: "#f97316",
@@ -493,62 +493,10 @@ class RiskDashboard {
 
   renderDialog() {
     if (!this.selectedRisk) return "";
-
-    const location = this.locations.find(
-      (l) => l.id === this.selectedRisk.locationId
-    );
-    const locationName = location?.name || "Unknown";
-
-    return `
-      <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;backdrop-filter: blur(2px);" id="dialog-backdrop">
-        <div style="background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 2rem;" id="dialog-content">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
-            <div>
-              <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--card-foreground); margin: 0 0 0.5rem 0;">${this.selectedRisk.title}</h2>
-              <span class="badge ${this.getSeverityBadgeClass(this.selectedRisk.severity)}" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem;">${this.selectedRisk.severity.toUpperCase()}</span>
-            </div>
-            <button id="close-dialog" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary-foreground);">✕</button>
-          </div>
-
-          <div style="space-y: 1rem;">
-            <div style="margin-bottom: 1.5rem;">
-              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--primary-foreground); margin: 0 0 0.5rem 0;">DESCRIPTION</h3>
-              <p style="color: var(--card-foreground); margin: 0;">${this.selectedRisk.description}</p>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-              <div>
-                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Status</p>
-                <span class="badge ${this.getStatusBadgeClass(this.selectedRisk.status)}" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem;">${this.selectedRisk.status}</span>
-              </div>
-              <div>
-                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Category</p>
-                <p style="margin: 0; color: var(--card-foreground);">${this.selectedRisk.category}</p>
-              </div>
-              <div>
-                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Location</p>
-                <p style="margin: 0; color: var(--card-foreground);">${locationName}</p>
-              </div>
-              <div>
-                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Trend</p>
-                <p style="margin: 0; color: var(--card-foreground);">${this.selectedRisk.trend}</p>
-              </div>
-            </div>
-
-            ${this.selectedRisk.mitigationPlan ? `<div style="margin-bottom: 1.5rem;">
-              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--primary-foreground); margin: 0 0 0.5rem 0;">MITIGATION PLAN</h3>
-              <p style="color: var(--card-foreground); margin: 0;">${this.selectedRisk.mitigationPlan}</p>
-            </div>` : ""}
-
-            <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
-              <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">Last Updated: ${this.selectedRisk.lastUpdated}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    const location = this.locations.find(l => l.id === this.selectedRisk.locationId);
+    return renderRiskDialog(this.selectedRisk, location ? location.name : "Unknown", COLORS);
   }
-
+  
  render() {
     const main = document.querySelector("main");
     if (!main) return;
