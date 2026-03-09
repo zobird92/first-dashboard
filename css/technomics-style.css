@@ -12,26 +12,35 @@
 }
 
 body {
-  background-color: var(--background, #ffffff);
-  color: var(--foreground, #0f172a);
-  font-family: var(--font-main, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial);
   margin: 0;
-  line-height: 1.5;
+  /* THIS IS THE FIX: */
+  background-color: var(--background); 
+  color: var(--foreground);
+  
+  font-family: var(--font-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 450; 
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 main {
-  background-color: transparent; /* Allow body background to show through */
-  color: var(--foreground, #0f172a);
+  /* Remove background-color: transparent; let body handle it */
   min-height: calc(100vh - 110px);
-  position: relative;
-  z-index: 1;
+  padding: 2rem;
 }
 
-.card {
-  background-color: var(--card, #ffffff);
-  color: var(--card-foreground, #0f172a);
+/* Ensure headings always inherit the correct theme color */
+h1, h2, h3, h4, p, span, div {
+  color: inherit; 
 }
 
+.card, .location-card, .risk-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  /* Force internal text to follow the card-foreground */
+}
 
 /* The Top Bar */
 .top-bar {

@@ -1,36 +1,26 @@
 :root {
-  /* --- Shared Constants (Don't change between themes) --- */
+  /* --- Shared Constants --- */
+  --font-main: 'Inter', system-ui, sans-serif;
   --font-size: 16px;
   --radius: 0.625rem;
-  --primary: #006666;
+  --primary: #005c5c;
   --accent: #FFD700;
-  
-  /* --- Light Mode (Default) --- */
-  --background: #ffffff;
-  --foreground: #0f172a;
+
+  /* --- Light Mode --- */
+  --background: #f8fafc;       /* Light grey/blue background, not pure white */
+  --foreground: #0f172a;       /* Deep navy for readability */
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  --sidebar: #ffffff;
-  /* ... other light variables ... */
+  --card-foreground: #1e293b;
+  --border: #cbd5e1;           /* Stronger border color */
 }
 
-/* Use a combined selector to ensure the Manual Toggle AND System Preference work */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) { 
-    /* Variables here apply if system is dark, unless you manually override with a .light class */
-    --background: #303747;
-    --foreground: #f8fafc;
-    /* ... dark variables ... */
-  }
-}
-
-/* This is what your JS toggle targets */
+/* This is the class your JS toggle adds to the <html> or <body> tag */
 [data-theme="dark"], .dark {
-  --background: #303747;
-  --foreground: #f8fafc;
-  --card: #0b1220;
-  --card-foreground: #f8fafc;
-  /* ... dark variables ... */
+  --background: #0f172a;       /* Deep dark navy */
+  --foreground: #f8fafc;       /* Off-white text */
+  --card: #1e293b;             /* Slightly lighter navy for cards */
+  --card-foreground: #f1f5f9;
+  --border: #334155;
 }
 
 main {
