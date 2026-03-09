@@ -60,12 +60,20 @@ class RiskDashboard {
   }
 
   setupEventListeners() {
-    // 1. Tab Navigation (The new buttons in your index.html)
+    // 1. Tab Navigation
     document.addEventListener("click", (e) => {
       const tab = e.target.closest("[data-tab]");
       if (tab) {
         this.currentTab = tab.dataset.tab;
         this.render(); 
+      }
+    });
+
+    // 2. Close Dialog (New - goes right here!)
+    document.addEventListener("click", (e) => {
+      if (e.target.id === "close-dialog" || e.target.id === "dialog-backdrop") {
+        this.selectedRisk = null;
+        this.render(); // This will also trigger the "Scroll Unlock" in your render() method
       }
     });
 
@@ -265,7 +273,7 @@ class RiskDashboard {
         <div class="card" style="flex: 1; min-width: 200px; padding: 1rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <p style="color: var(--muted-foreground); margin: 0; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em;">${item.label}</p>
+              <p style="color: var(--primary-foreground); margin: 0; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em;">${item.label}</p>
               <p style="font-size: 2.25rem; font-weight: 800; color: ${this.getDynamicColor(item.type, item.value)}; margin: -2px 0 0 0;">${item.value}</p>
             </div>
             <span style="font-size: 2rem; opacity: 0.9;">${item.icon}</span>
@@ -287,17 +295,17 @@ class RiskDashboard {
           <span class="badge ${this.getSeverityBadgeClass(risk.severity)}" style="padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">${risk.severity.toUpperCase()}</span>
         </div>
 
-        <p style="color: var(--muted-foreground); font-size: 0.875rem; margin-bottom: 0.75rem;">${risk.description.substring(0, 100)}...</p>
+        <p style="color: var(--primary-foreground); font-size: 0.875rem; margin-bottom: 0.75rem;">${risk.description.substring(0, 100)}...</p>
 
         <div style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.875rem;">
           <span class="badge ${this.getStatusBadgeClass(risk.status)}" style="padding: 0.25rem 0.75rem; border-radius: 0.25rem;">Status: ${risk.status}</span>
-          <span style="color: var(--muted-foreground);">📍 ${locationName}</span>
-          <span style="color: var(--muted-foreground);">🏷️ ${risk.category}</span>
+          <span style="color: var(--primary-foreground);">📍 ${locationName}</span>
+          <span style="color: var(--primary-foreground);">🏷️ ${risk.category}</span>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-          <span style="font-size: 0.875rem; color: var(--muted-foreground);">Trend: ${risk.trend}</span>
-          <span style="font-size: 0.875rem; color: var(--muted-foreground);">Impact: ${risk.impact}/10</span>
+          <span style="font-size: 0.875rem; color: var(--primary-foreground);">Trend: ${risk.trend}</span>
+          <span style="font-size: 0.875rem; color: var(--primary-foreground);">Impact: ${risk.impact}/10</span>
         </div>
       </div>
     `;
@@ -325,7 +333,7 @@ class RiskDashboard {
        
        <p style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Total Risks: ${totalrisksatthislocation}</p>
        
-       <p style="font-size: 0.875rem; color: var(--muted-foreground); white-space: pre-line; margin-bottom: 1rem;">${location.address}</p>
+       <p style="font-size: 0.875rem; color: var(--primary-foreground); white-space: pre-line; margin-bottom: 1rem;">${location.address}</p>
 
         <div style="margin-bottom: 1rem;">
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -333,29 +341,29 @@ class RiskDashboard {
           </div>
         </div>
 
-        <p style="font-size: 0.875rem; color: var(--muted-foreground); margin-bottom: 1rem;">${location.description.substring(0, 80)}...</p>
+        <p style="font-size: 0.875rem; color: var(--primary-foreground); margin-bottom: 1rem;">${location.description.substring(0, 80)}...</p>
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
           <div style="padding: 0.5rem; background: rgba(220, 38, 38, 0.1); border-radius: 0.25rem; text-align: center;">
             <p style="font-weight: 600; color: #dc2626; margin: 0;">${critical}</p>
-            <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">Critical</p>
+            <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">Critical</p>
           </div>
           <div style="padding: 0.5rem; background: rgba(249, 115, 22, 0.1); border-radius: 0.25rem; text-align: center;">
             <p style="font-weight: 600; color: #f97316; margin: 0;">${high}</p>
-            <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">High</p>
+            <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">High</p>
           </div>
           <div style="padding: 0.5rem; background: rgba(234, 179, 8, 0.1); border-radius: 0.25rem; text-align: center;">
             <p style="font-weight: 600; color: #eab308; margin: 0;">${medium}</p>
-            <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">Med</p>
+            <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">Med</p>
           </div>
           <div style="padding: 0.5rem; background: rgba(22, 163, 74, 0.1); border-radius: 0.25rem; text-align: center;">
             <p style="font-weight: 600; color: #16a34a; margin: 0;">${low}</p>
-            <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">Low</p>
+            <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">Low</p>
           </div>
         </div>
 
         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-          <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0;">Overall Risk Score: <strong style="color: var(--card-foreground);">${liveScore}</strong></p>
+          <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0;">Overall Risk Score: <strong style="color: var(--card-foreground);">${liveScore}</strong></p>
         </div>
       </div>
     `;
@@ -475,7 +483,7 @@ class RiskDashboard {
     return `
       <div style="padding: 1.5rem;">
         <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 1.5rem 0;">Mitigation Tracker</h2>
-        <div style="background: var(--card); padding: 2rem; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; color: var(--muted-foreground);">
+        <div style="background: var(--card); padding: 2rem; border-radius: var(--radius); border: 1px solid var(--border); text-align: center; color: var(--primary-foreground);">
           <p>📈 Mitigation tracking and progress visualization coming soon</p>
           <p style="font-size: 0.875rem;">Monitor remediation efforts, trends, and risk reduction progress.</p>
         </div>
@@ -492,48 +500,48 @@ class RiskDashboard {
     const locationName = location?.name || "Unknown";
 
     return `
-      <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50;" id="dialog-backdrop">
+      <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9999;backdrop-filter: blur(2px);" id="dialog-backdrop">
         <div style="background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 2rem;" id="dialog-content">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
             <div>
               <h2 style="font-size: 1.5rem; font-weight: 600; color: var(--card-foreground); margin: 0 0 0.5rem 0;">${this.selectedRisk.title}</h2>
               <span class="badge ${this.getSeverityBadgeClass(this.selectedRisk.severity)}" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem;">${this.selectedRisk.severity.toUpperCase()}</span>
             </div>
-            <button id="close-dialog" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted-foreground);">✕</button>
+            <button id="close-dialog" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--primary-foreground);">✕</button>
           </div>
 
           <div style="space-y: 1rem;">
             <div style="margin-bottom: 1.5rem;">
-              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); margin: 0 0 0.5rem 0;">DESCRIPTION</h3>
+              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--primary-foreground); margin: 0 0 0.5rem 0;">DESCRIPTION</h3>
               <p style="color: var(--card-foreground); margin: 0;">${this.selectedRisk.description}</p>
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
               <div>
-                <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0 0 0.25rem 0;">Status</p>
+                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Status</p>
                 <span class="badge ${this.getStatusBadgeClass(this.selectedRisk.status)}" style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem;">${this.selectedRisk.status}</span>
               </div>
               <div>
-                <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0 0 0.25rem 0;">Category</p>
+                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Category</p>
                 <p style="margin: 0; color: var(--card-foreground);">${this.selectedRisk.category}</p>
               </div>
               <div>
-                <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0 0 0.25rem 0;">Location</p>
+                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Location</p>
                 <p style="margin: 0; color: var(--card-foreground);">${locationName}</p>
               </div>
               <div>
-                <p style="font-size: 0.875rem; color: var(--muted-foreground); margin: 0 0 0.25rem 0;">Trend</p>
+                <p style="font-size: 0.875rem; color: var(--primary-foreground); margin: 0 0 0.25rem 0;">Trend</p>
                 <p style="margin: 0; color: var(--card-foreground);">${this.selectedRisk.trend}</p>
               </div>
             </div>
 
             ${this.selectedRisk.mitigationPlan ? `<div style="margin-bottom: 1.5rem;">
-              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--muted-foreground); margin: 0 0 0.5rem 0;">MITIGATION PLAN</h3>
+              <h3 style="font-size: 0.875rem; font-weight: 600; color: var(--primary-foreground); margin: 0 0 0.5rem 0;">MITIGATION PLAN</h3>
               <p style="color: var(--card-foreground); margin: 0;">${this.selectedRisk.mitigationPlan}</p>
             </div>` : ""}
 
             <div style="padding-top: 1rem; border-top: 1px solid var(--border);">
-              <p style="font-size: 0.75rem; color: var(--muted-foreground); margin: 0;">Last Updated: ${this.selectedRisk.lastUpdated}</p>
+              <p style="font-size: 0.75rem; color: var(--primary-foreground); margin: 0;">Last Updated: ${this.selectedRisk.lastUpdated}</p>
             </div>
           </div>
         </div>
@@ -544,6 +552,14 @@ class RiskDashboard {
  render() {
     const main = document.querySelector("main");
     if (!main) return;
+
+    if (this.selectedRisk) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = '15px'; // Optional: prevents "jump" when scrollbar disappears
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
 
     // --- STEP 1: SAVE FOCUS STATE ---
     // Check if the user is currently typing in an input (like search)
