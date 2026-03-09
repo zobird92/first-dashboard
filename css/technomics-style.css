@@ -128,7 +128,20 @@ h1, h2, h3, h4, p, span, div {
   padding: 1.5rem;
   transition: transform 0.2s ease;
 }
+.location-grid {
+  display: grid;
+  /* Forces 4 columns. Use 1fr to make them equal width */
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
 
+/* Optional: stack them on smaller tablet screens */
+@media (max-width: 1024px) {
+  .location-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 /* The risk entry card */
 .risk-card {
   background-color: var(--card);

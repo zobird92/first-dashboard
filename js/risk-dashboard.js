@@ -27,7 +27,6 @@ class RiskDashboard {
   }
 
   // --- 1. DATA INITIALIZATION ---
-
   async loadData() {
     try {
       const [riskResponse, locationResponse] = await Promise.all([
@@ -51,10 +50,8 @@ class RiskDashboard {
   }
 
   // --- 2. EVENT HANDLING ---
-
   setupEventListeners() {
     document.addEventListener("click", (e) => {
-      // Tab Navigation
       const tab = e.target.closest("[data-tab]");
       if (tab) {
         this.currentTab = tab.dataset.tab;
@@ -62,14 +59,12 @@ class RiskDashboard {
         return;
       }
 
-      // Dialog Closing
       if (e.target.id === "close-dialog" || e.target.id === "dialog-backdrop") {
         this.selectedRisk = null;
         this.render();
         return;
       }
 
-      // Clear Filters
       if (e.target.id === "clear-filters") {
         this.selectedLocation = "all";
         this.selectedSeverity = "all";
@@ -79,7 +74,6 @@ class RiskDashboard {
         return;
       }
 
-      // Open Risk Dialog
       const riskCard = e.target.closest("[data-risk-id]");
       if (riskCard) {
         const riskId = riskCard.dataset.riskId;
@@ -87,17 +81,8 @@ class RiskDashboard {
         this.render();
         return;
       }
-
-      // Location Card -> Switch to Risks Tab
-      const locCard = e.target.closest("[data-location-id]");
-      if (locCard && this.currentTab === "locations") {
-        this.selectedLocation = locCard.dataset.locationId;
-        this.currentTab = "risks";
-        this.render();
-      }
     });
 
-    // Inputs & Selects
     document.addEventListener("change", (e) => {
       const filters = ["location-filter", "severity-filter", "status-filter"];
       if (filters.includes(e.target.id)) {
@@ -117,6 +102,23 @@ class RiskDashboard {
   }
 
   // --- 3. LOGIC & CALCULATIONS ---
+  calculateStats() {
+  const totalCritical = this.risks.filter((r) => r.severity === "critical").length;
+  const totalActive = this.risks.filter((r) => r.status === "active").length;
+  
+  // Calculate a true average by summing all individual risk impacts
+  const totalImpact = this.risks.reduce((sum, risk) => sum + (Number(risk.impact) || 0), 0);
+  const avgScore = this.risks.length > 0 
+    ? (totalImpact / this.risks.length).toFixed(1) 
+    : "0.0";
+
+  return { 
+    totalLocations: this.locations.length, 
+    totalActive, 
+    totalCritical, 
+    averageRiskScore: avgScore 
+  };
+}
 
   getFilteredRisks() {
     return this.risks.filter((risk) => {
@@ -127,43 +129,15 @@ class RiskDashboard {
         [risk.title, risk.description, risk.category].some(text => 
           text.toLowerCase().includes(this.searchQuery.toLowerCase())
         );
-
       return matchesLocation && matchesSeverity && matchesStatus && matchesSearch;
     });
   }
 
-  calculateStats() {
-    const totalCritical = this.risks.filter((r) => r.severity === "critical").length;
-    const totalActive = this.risks.filter((r) => r.status === "active").length;
-    
-    const liveLocationScores = this.locations.map(loc => 
-      this.risks.filter(r => r.locationId === loc.id)
-                .reduce((sum, risk) => sum + (Number(risk.impact) || 0), 0)
-    );
-
-    const avgScore = liveLocationScores.length > 0 
-      ? Math.round(liveLocationScores.reduce((a, b) => a + b, 0) / liveLocationScores.length) 
-      : 0;
-
-    return { totalLocations: this.locations.length, totalActive, totalCritical, averageRiskScore: avgScore };
-  }
-
   // --- 4. STYLING HELPERS ---
-
   getBadgeClass(type, value) {
     const maps = {
-      status: {
-        active: "bg-red-100 text-red-800",
-        mitigated: "bg-blue-100 text-blue-800",
-        monitoring: "bg-yellow-100 text-yellow-800",
-        resolved: "bg-green-100 text-green-800",
-      },
-      severity: {
-        critical: "bg-red-600 text-white",
-        high: "bg-orange-500 text-white",
-        medium: "bg-yellow-500 text-black",
-        low: "bg-green-500 text-white",
-      }
+      status: { active: "bg-red-100 text-red-800", mitigated: "bg-blue-100 text-blue-800", monitoring: "bg-yellow-100 text-yellow-800", resolved: "bg-green-100 text-green-800" },
+      severity: { critical: "bg-red-600 text-white", high: "bg-orange-500 text-white", medium: "bg-yellow-500 text-black", low: "bg-green-500 text-white" }
     };
     return maps[type][value] || "bg-gray-100 text-gray-800";
   }
@@ -191,7 +165,6 @@ class RiskDashboard {
   }
 
   // --- 5. RENDER COMPONENTS ---
-
   renderHeaderStats() {
     const stats = this.calculateStats();
     const headerData = [
@@ -238,7 +211,6 @@ class RiskDashboard {
   }
 
   // --- 6. TAB RENDERING ---
-
   renderOverviewTab() {
     return `
       <div style="padding: 2rem 0;">
@@ -265,7 +237,6 @@ class RiskDashboard {
           <h2>Risk Details</h2>
           <span style="font-size: 0.85rem; color: var(--muted-foreground);">Showing ${filteredRisks.length} of ${this.risks.length} entries</span>
         </div>
-
         <div style="background: var(--card); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: end;">
           <div>
             <label style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase;">Search</label>
@@ -290,7 +261,6 @@ class RiskDashboard {
           </div>
           <button id="clear-filters" style="padding: 0.6rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Reset Filters</button>
         </div>
-
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
           ${filteredRisks.length > 0 ? filteredRisks.map(risk => this.renderRiskCard(risk)).join("") : `<p style="grid-column: 1/-1; text-align: center; padding: 3rem;">No risks found matching those criteria.</p>`}
         </div>
@@ -298,16 +268,32 @@ class RiskDashboard {
     `;
   }
 
-  // --- 7. CORE RENDER CYCLE ---
+  renderLocationsTab() {
+  return `
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+      ${this.locations.map(loc => {
+        // Filter risks for this specific location
+        const locationRisks = this.risks.filter(r => r.locationId === loc.id);
+        
+        // Calculate the specific site score dynamically
+        const siteScore = locationRisks.length > 0
+          ? (locationRisks.reduce((sum, r) => sum + (Number(r.impact) || 0), 0) / locationRisks.length).toFixed(1)
+          : "0.0";
 
+        // Pass the count and the calculated score to the component
+        return renderLocationCard(loc, locationRisks.length, siteScore);
+      }).join('')}
+    </div>
+  `;
+}
+
+  // --- 7. CORE RENDER CYCLE ---
   render() {
     const main = document.querySelector("main");
     if (!main) return;
 
-    // Handle Scroll Locking for Dialog
     document.body.style.overflow = this.selectedRisk ? 'hidden' : '';
 
-    // Preserve Focus for Search Input
     const activeElementId = document.activeElement?.id;
     const start = document.activeElement?.selectionStart;
     const end = document.activeElement?.selectionEnd;
@@ -315,9 +301,9 @@ class RiskDashboard {
     const tabContent = (() => {
       switch (this.currentTab) {
         case "overview":   return this.renderOverviewTab();
-        case "locations":  return `<div style="padding:2rem 0;">${this.renderLocationsTab()}</div>`;
+        case "locations":  return this.renderLocationsTab(); // Removed the extra wrapper div that was adding padding
         case "risks":      return this.renderRisksTab();
-        case "mitigation": return `<div style="padding:2rem 0; text-align:center;"><h2 style="margin-bottom:1rem;">Mitigation Tracker</h2><div class="card" style="padding:3rem;">Coming Soon...</div></div>`;
+        case "mitigation": return `<div style="padding:2rem 0; text-align:center;"><h2>Mitigation Tracker</h2><div class="card" style="padding:3rem;">Coming Soon...</div></div>`;
         default:           return this.renderOverviewTab();
       }
     })();
@@ -332,17 +318,29 @@ class RiskDashboard {
       ${this.selectedRisk ? renderRiskDialog(this.selectedRisk, this.locations.find(l => l.id === this.selectedRisk.locationId)?.name, COLORS) : ""}
     `;
 
-    // Restore Focus
-    if (activeElementId) {
-      const el = document.getElementById(activeElementId);
-      if (el) {
-        el.focus();
-        if (start !== null) el.setSelectionRange(start, end);
-      }
+    // Re-attach interactivity for Location Cards
+    if (this.currentTab === 'locations') {
+      main.querySelectorAll('.location-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const locId = card.getAttribute('data-location-id');
+          if (locId) {
+            this.selectedLocation = locId;
+            this.currentTab = 'risks';
+            this.render();
+          }
+        });
+      });
     }
 
-    // Post-Render UI
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active-tab', btn.dataset.tab === this.currentTab));
+    if (activeElementId) {
+      const el = document.getElementById(activeElementId);
+      if (el) { el.focus(); if (start !== null) el.setSelectionRange(start, end); }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => 
+      btn.classList.toggle('active-tab', btn.dataset.tab === this.currentTab)
+    );
+
     if (this.currentTab === 'overview') this.initCharts();
   }
 
@@ -356,7 +354,6 @@ class RiskDashboard {
       if (existing) existing.destroy();
     });
 
-    // Severity Chart
     const counts = {
       critical: this.risks.filter(r => r.severity === 'critical').length,
       high: this.risks.filter(r => r.severity === 'high').length,
@@ -371,7 +368,6 @@ class RiskDashboard {
       }
     });
 
-    // Category Chart
     const categories = [...new Set(this.risks.map(r => r.category))];
     const palette = ['#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1'];
     const datasets = this.locations.map((loc, idx) => ({
@@ -386,15 +382,6 @@ class RiskDashboard {
         this.render();
       }
     });
-  }
-
-  // Bridging method to match your existing import
-  renderLocationsTab() {
-    return `
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
-        ${this.locations.map(loc => renderLocationCard(loc, this.risks.filter(r => r.locationId === loc.id).length)).join('')}
-      </div>
-    `;
   }
 }
 
