@@ -3,96 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subversion Risk 3D Visual - Mitigation View</title>
+    <title>Subversion Risk 3D Visual</title>
     
     <link rel="stylesheet" href="css/styles.css">
-
-    <script src="js/data-processor.js"></script>
-    <script src="js/ui-controls.js"></script>
-    <script src="js/app.js"></script>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
 </head>
-<body class="min-h-screen">
 
-    <div id="view-3d-container" class="relative transition-opacity duration-500 w-full h-screen">
-        <canvas id="visualization-canvas"></canvas>
+<body class="bg-gray-900 overflow-hidden">
 
-        <div id="exportContainer">
-            <button id="exportBtn" class="export-btn">📥 Export Visible Data</button>
+    <div id="view-3d-container" class="relative w-full h-screen">
+        <canvas id="visualization-canvas" class="w-full h-full block"></canvas>
+
+        <div id="exportContainer" class="absolute top-5 left-1/2 -translate-x-1/2 z-50">
+            <button id="exportBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-bold shadow-2xl">
+                📥 Export Visible Data
+            </button>
         </div>
 
-        <div id="tooltip" class="p-3 bg-gray-800/95 text-white rounded-md shadow-2xl border border-gray-700 text-sm hidden"></div>
-
-        <div id="info" class="info-panel absolute top-4 left-4 p-4 rounded-lg shadow-xl">
-            <h3 class="text-xl font-bold text-indigo-400 mb-2">
-                <span class="text-red-500">Dummy</span> Subversion Risk 3D Visual
-            </h3>
-            <p class="text-sm text-gray-300">
-                <strong>X-Axis:</strong> <span id="info-x-axis" class="text-white">Vulnerability Surface</span>
-            </p>
-            <p class="text-sm text-gray-300">
-                <strong>Y-Axis (Depth):</strong> <span id="info-y-axis" class="text-white">Adversarial Subversion</span>
-            </p>
-            <p class="text-sm text-gray-300">
-                <strong>Z-Axis (Height):</strong> Average Risk Score (1-25)
-            </p>
-            <small class="block mt-2 text-gray-500">
-                Left Click: Rotate | Right Click: Pan | Scroll: Zoom | <strong class="text-red-400">Click Bar: Drilldown</strong>
-            </small>
+        <div id="info" class="absolute top-4 left-4 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50">
+            <h3 class="text-lg font-bold text-indigo-400">Subversion Risk Visual</h3>
+            <div class="text-xs text-gray-400 mt-1 space-y-1">
+                <p><strong>X-Axis:</strong> Vulnerability Surface</p>
+                <p><strong>Y-Axis:</strong> Adversarial Subversion</p>
+                <p><strong>Z-Axis:</strong> Risk Score</p>
+            </div>
         </div>
 
-        <div id="legend" class="info-panel absolute bottom-4 left-4 p-4 rounded-lg shadow-xl bg-gray-900/80 backdrop-blur-sm">
-            <strong id="legend-title" class="block mb-3 text-gray-300">Risk Level</strong>
+        <div id="legend" class="absolute bottom-4 left-4 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50">
+            <strong id="legend-title" class="text-sm block mb-2 text-gray-400 uppercase tracking-wider">Risk Level</strong>
             <div id="legend-content" class="space-y-2"></div>
         </div>
 
-        <div id="resetContainer" style="position: absolute; top: 50%; left: 0; transform: translateY(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 2px;">
-            <button id="resetBtn" style="padding: 15px 10px; background: rgba(75, 85, 99, 0.9); color: white; border: none; border-radius: 0 8px 8px 0; cursor: pointer; font-weight: bold; backdrop-filter: blur(5px); box-shadow: 4px 0 10px rgba(0,0,0,0.2); writing-mode: vertical-rl; text-orientation: mixed; transition: background 0.3s;">
+        <div id="time-slider-panel" class="absolute bottom-8 left-1/2 -translate-x-1/2 p-4 rounded-xl bg-gray-800/95 border border-gray-700 w-80 z-50 shadow-2xl">
+            <input type="range" id="time-slider" min="0" max="11" value="11" oninput="handleTimeChange(this.value)" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+            <div id="current-date-display" class="text-center text-indigo-400 font-mono font-bold mt-2"></div>
+        </div>
+
+        <div id="controls" class="absolute top-4 right-4 w-72 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50 max-h-[90vh] overflow-y-auto">
+            <h4 class="font-bold text-indigo-400 border-b border-gray-700 pb-2 mb-4">Configuration & Filters</h4>
+            
+            <div class="mb-4">
+                <label class="flex items-center justify-between cursor-pointer">
+                    <span class="text-sm">Mitigation View</span>
+                    <input type="checkbox" id="mitigation-toggle" class="w-5 h-5 accent-green-500">
+                </label>
+            </div>
+
+            <div id="axis-controls"></div>
+            <div id="severity-filters" class="mt-6"></div>
+            <div id="dynamic-filters" class="mt-6"></div>
+        </div>
+        
+        <div id="resetContainer" class="absolute top-1/2 left-0 -translate-y-1/2 z-50">
+            <button id="resetBtn" class="bg-gray-700 hover:bg-indigo-600 text-white py-4 px-2 rounded-r-md transition-colors" style="writing-mode: vertical-rl;">
                 🔄 RESET VIEW
             </button>
         </div>
 
-        <div id="time-slider-panel" class="control-panel absolute bottom-4 left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-xl w-64 md:w-96">
-            <strong class="block text-gray-200 mb-2 text-center">Risk Over Time</strong>
-            <input type="range" id="time-slider" min="0" max="11" value="11" oninput="handleTimeChange(this.value)"
-                   class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <div class="text-center text-sm text-indigo-400 mt-2">
-                <span id="current-date-display" class="font-bold"></span>
-            </div>
-        </div>
-
-        <div id="controls" class="control-panel absolute top-4 right-4 w-64 p-4 rounded-lg shadow-xl max-h-[95vh] overflow-y-auto">
-            <h4 class="text-lg font-semibold text-indigo-400 mb-4 border-b border-gray-700 pb-2">Configuration & Filters</h4>
-
-            <div class="control-section">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-white">Mitigation View</span>
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input type="checkbox" name="toggle" id="mitigation-toggle" 
-                               class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 ease-in-out" 
-                               style="top: -4px; border-color: #4B5563; left: 0;"/>
-                        <label for="mitigation-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-600 cursor-pointer transition-colors duration-300"></label>
-                    </div>
-                </div>
-                <p class="text-xs text-gray-400">Show mitigation status & cost</p>
-            </div>
-
-            <div class="control-section" id="axis-controls"></div>
-
-            <div class="control-section" id="severity-filters"></div>
-
-            <div id="dynamic-filters"></div>
-        </div>
+        <div id="tooltip" class="fixed p-3 bg-black/90 text-white text-xs rounded border border-gray-600 hidden pointer-events-none z-[100]"></div>
     </div>
 
-    <div id="view-2d-container" class="transition-opacity duration-500 opacity-0 hidden min-h-screen p-4 sm:p-6 text-white w-full max-w-6xl mx-auto"></div>
+    <div id="view-2d-container" class="hidden fixed inset-0 bg-gray-900 z-[60] p-10 overflow-y-auto"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <script src="js/data-processor.js"></script>
+    <script src="js/ui-controls.js"></script>
+    <script src="js/app.js"></script>
 
 </body>
 </html>

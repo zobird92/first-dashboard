@@ -104,7 +104,7 @@ const onMouseClick = () => {
     }
 };
 
-const renderChart = () => {
+window.renderChart = () => {
     while (chartGroup.children.length > 0) {
         const obj = chartGroup.children[0];
         chartGroup.remove(obj);
@@ -192,74 +192,42 @@ const animate = () => {
     renderer.render(scene, camera);
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const exportBtn = document.getElementById("exportBtn");
-    
-    if (exportBtn) {
-        exportBtn.addEventListener("click", function () {
-            const xK = FIELD_MAP[currentXField];
-            const yK = FIELD_MAP[currentYField];
-
-            const filtered = data.filter(d => 
-                d.Date === currentDate && 
-                activeFilters[xK]?.has(d[xK]) && 
-                activeFilters[yK]?.has(d[yK]) && 
-                activeSeverityFilters.has(d["Risk Level"]?.trim())
-            );
-
-            if (filtered.length === 0) {
-                alert("No data visible to export.");
-                return;
-            }
-
-            const ws = XLSX.utils.json_to_sheet(filtered);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Filtered Results");
-            XLSX.writeFile(wb, `subversion_risk_export_${new Date().toISOString().split("T")[0]}.xlsx`);
-        });
-    }
-
-    const resetBtn = document.getElementById("resetBtn");
-    if (resetBtn) {
-        resetBtn.addEventListener("click", function () {
-            document.querySelectorAll("#severity-filters input, #dynamic-filters input").forEach(cb => {
-                if (!cb.checked) {
-                    cb.checked = true;
-                    cb.dispatchEvent(new Event("change", { bubbles: true }));
-                }
-            });
-
-            const mt = document.getElementById("mitigation-toggle");
-            if (mt && mt.checked) {
-                mt.checked = false;
-                mt.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-
-            renderChart();
-        });
-    }
-
+window.addEventListener('load', async () => {
     try {
+        // 1. Fetch the data first
         await loadDataFromJson();
-        generateAxisControls();
-        generateSeverityFilters();
-        renderDynamicFilters();
-        updateLegend();
+        
+        // 2. Initialize UI components that depend on data
+        window.generateAxisControls();
+        window.generateSeverityFilters();
+        window.renderDynamicFilters();
+        window.updateLegend();
+        
+        // 3. Start the 3D Engine
         initThree();
-    } catch (err) {
-        console.error("Initialization failed:", err);
-    }
-
-    window.onload = async () => {
-        try {
-            await loadDataFromJson(); // Must finish first
-            generateAxisControls();   // Populates the UI
-            generateSeverityFilters();
-            renderDynamicFilters();
-            updateLegend();
-            initThree();              // Renders the 3D model
-        } catch (err) {
-            console.error("Initialization failed:", err);
+        
+        // 4. Setup Export Button
+        const exportBtn = document.getElementById("exportBtn");
+        if (exportBtn) {
+            exportBtn.onclick = () => {
+                const xK = FIELD_MAP[currentXField];
+                const yK = FIELD_MAP[currentYField];
+                const filtered = data.filter(d => 
+                    d.Date === currentDate && 
+                    activeFilters[xK]?.has(d[xK]) && 
+                    activeFilters[yK]?.has(d[yK]) && 
+                    activeSeverityFilters.has(d["Risk Level"]?.trim())
+                );
+                if (filtered.length === 0) return alert("No data to export.");
+                const ws = XLSX.utils.json_to_sheet(filtered);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Export");
+                XLSX.writeFile(wb, `Risk_Export_${currentDate}.xlsx`);
+            };
         }
-    };
+
+        console.log("Dashboard initialized successfully.");
+    } catch (err) {
+        console.error("Critical Boot Error:", err);
+    }
 });

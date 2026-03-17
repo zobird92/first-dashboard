@@ -5,17 +5,17 @@ window.currentDate = "";
 window.activeFilters = {};
 window.activeSeverityFilters = new Set(["Watch List", "Risk Open", "Subverted - Risk Realized"]);
 window.currentXField = 'Vulnerability Surface';
-window.currentYField = 'Adversarial Subversion (Trial Schema 3)';
+window.currentYField = 'Adversarial Subversion';
 window.mitigationMode = false;
 window.drilldownData = [];
 window.aggregationKeys = { xVal: '', yVal: '' };
 
-const FIELD_MAP = {
+window.FIELD_MAP = {
             'Mission Impact': 'Mission Impact',
             'Difficulty': 'Difficulty',
             'Risk Score': 'Risk Score',
             'Vulnerability Surface': 'Vulnerability Surface',
-            'Adversarial Subversion (Trial Schema 3)': 'Adversarial Subversion',
+            'Adversarial Subversion': 'Adversarial Subversion',
             'Site': 'Site',
             'Subversion Risk Type': 'Subversion Risk Type',
             'Weapon System': 'Weapon System',
@@ -29,7 +29,7 @@ const FIELD_MAP = {
 
         const FIELD_LABELS = [
             'Vulnerability Surface',
-            'Adversarial Subversion (Trial Schema 3)',
+            'Adversarial Subversion',
             'Site',
             'Subversion Risk Type',
             'Weapon System',
@@ -43,8 +43,8 @@ const FIELD_MAP = {
             "Subverted - Risk Realized": { color: "bg-red-500" }
         };
 
-    async function loadDataFromJson() {
-        const response = await fetch('data/subversion_risk_data.json'); // Ensure path is correct
+    window.loadDataFromJson = async function() {
+        const response = await fetch('data/subversion_risk_data.json');
         window.data = await response.json();
     
          // 1. Extract unique dates and set default
