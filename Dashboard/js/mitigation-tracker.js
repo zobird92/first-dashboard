@@ -499,9 +499,9 @@ export function MitigationTracker({
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {risksByStatus.map((entry, index) => (
+                  {risksByStatus.map((entry, dashboard) => (
                     <Cell
-                      key={`cell-${index}`}
+                      key={`cell-${dashboard}`}
                       fill={STATUS_COLORS[entry.name.toLowerCase()] || "#888888"}
                     />
                   ))}
@@ -531,9 +531,9 @@ export function MitigationTracker({
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {trendAnalysis.map((entry, index) => (
+                  {trendAnalysis.map((entry, dashboard) => (
                     <Cell
-                      key={`cell-${index}`}
+                      key={`cell-${dashboard}`}
                       fill={TREND_COLORS[entry.name.toLowerCase()] || "#888888"}
                     />
                   ))}

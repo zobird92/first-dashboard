@@ -381,7 +381,7 @@ class RiskDashboard {
     };
     ChartHelpers.initSeverityChart(severityCtx, counts, COLORS, (ev, el) => {
       if (el.length > 0) {
-        this.selectedSeverity = ['critical', 'high', 'medium', 'low'][el[0].index];
+        this.selectedSeverity = ['critical', 'high', 'medium', 'low'][el[0].dashboard];
         this.currentTab = 'risks';
         this.render();
       }
@@ -396,7 +396,7 @@ class RiskDashboard {
     }));
     ChartHelpers.initCategoryChart(categoryCtx, categories, datasets, (ev, el) => {
       if (el.length > 0) {
-        this.searchQuery = categories[el[0].index];
+        this.searchQuery = categories[el[0].dashboard];
         this.currentTab = 'risks';
         this.render();
       }
