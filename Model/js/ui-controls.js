@@ -152,3 +152,16 @@ const renderRiskMatrix2D = () => {
                 `;
             }
         };
+
+        const getCellBackgroundColor = (x, y) => {
+            const score = x * y;
+            if (score >= 17) return 'bg-red-900/20';
+            if (score >= 9) return 'bg-orange-900/20';
+            return 'bg-green-900/20';
+        };
+
+        const getRiskColorClass = (score) => {
+            if (score >= 17) return 'bg-red-500 ring-red-400';
+            if (score >= 9) return 'bg-orange-500 ring-orange-400';
+            return 'bg-green-500 ring-green-400';
+        };

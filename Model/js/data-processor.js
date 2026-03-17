@@ -1,3 +1,15 @@
+// Shared Global Variables
+window.data = [];
+window.uniqueDates = [];
+window.currentDate = "";
+window.activeFilters = {};
+window.activeSeverityFilters = new Set(["Watch List", "Risk Open", "Subverted - Risk Realized"]);
+window.currentXField = 'Vulnerability Surface';
+window.currentYField = 'Adversarial Subversion (Trial Schema 3)';
+window.mitigationMode = false;
+window.drilldownData = [];
+window.aggregationKeys = { xVal: '', yVal: '' };
+
 const FIELD_MAP = {
             'Mission Impact': 'Mission Impact',
             'Difficulty': 'Difficulty',
@@ -31,7 +43,18 @@ const FIELD_MAP = {
             "Subverted - Risk Realized": { color: "bg-red-500" }
         };
 
-        async function loadDataFromJson() {
-            const response = await fetch('subversion_risk_data.json');
-            data = await response.json(); // Logic to extract uniqueDates and set default activeFilters...
-        }
+    async function loadDataFromJson() {
+        const response = await fetch('data/subversion_risk_data.json'); // Ensure path is correct
+        window.data = await response.json();
+    
+         // 1. Extract unique dates and set default
+        window.uniqueDates = [...new Set(window.data.map(d => d.Date))];
+        window.currentDate = window.uniqueDates[0];
+
+        // 2. Initialize activeFilters for every field in FIELD_LABELS
+        FIELD_LABELS.forEach(label => {
+            const key = FIELD_MAP[label];
+            const uniqueValues = [...new Set(window.data.map(d => d[key]))];
+            window.activeFilters[key] = new Set(uniqueValues);
+        });
+    }
