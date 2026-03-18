@@ -77,3 +77,13 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #68D391;
         }
+        
+        #heatmap-grid {
+            position: relative; /* This is vital for the dot's absolute positioning */
+        }
+
+        #risk-point {
+            position: absolute;
+            transform: translate(-50%, 50%); /* Centers the dot exactly on the coordinate */
+            z-index: 20;
+        }

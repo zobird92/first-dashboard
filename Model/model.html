@@ -63,7 +63,39 @@
         <div id="tooltip" class="fixed p-3 bg-black/90 text-white text-xs rounded border border-gray-600 hidden pointer-events-none z-[100]"></div>
     </div>
 
-    <div id="view-2d-container" class="hidden fixed inset-0 bg-gray-900 z-[60] p-10 overflow-y-auto"></div>
+    <div id="view-2d-container" class="hidden fixed inset-0 bg-[#0f172a] z-[60] p-10 overflow-y-auto flex flex-col items-center">
+    <div class="w-full max-w-5xl flex justify-between items-start mb-10 bg-[#1e293b] p-6 rounded-xl border border-slate-700">
+        <button onclick="window.setViewMode('3D')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Back to 3D View
+        </button>
+        
+        <h2 id="drilldown-header" class="text-xl font-bold text-indigo-400">Drill-down: [Title]</h2>
+
+        <div class="bg-[#0f172a] p-4 rounded-lg border border-slate-700 w-64">
+            <p class="text-xs text-gray-400 font-bold uppercase">Risk Summary</p>
+            <div id="summary-score" class="text-4xl font-bold text-red-500 my-1">0</div>
+            <p class="text-[10px] text-gray-500">Average Risk Level Score in Group</p>
+            <p class="text-[10px] text-white mt-2"><span id="summary-count" class="font-bold">0</span> Total Items Plotted</p>
+        </div>
+    </div>
+
+    <div class="relative bg-[#1e293b] p-12 rounded-2xl border border-slate-700 shadow-2xl">
+        <div class="absolute -left-4 top-1/2 -translate-y-1/2 -rotate-90 flex items-center gap-4 text-[10px] font-bold tracking-widest text-white uppercase">
+            <span class="text-green-500">Less Severe</span> ── SEVERITY ── <span class="text-red-500">More Severe</span>
+        </div>
+
+        <div id="heatmap-grid" class="grid grid-cols-5 grid-rows-5 gap-1 w-[500px] h-[400px] border-2 border-slate-800">
+            </div>
+
+        <div class="mt-6 flex flex-col items-center">
+            <div class="flex items-center gap-8 text-[10px] font-bold tracking-widest text-white uppercase">
+                <span>Harder</span> ── SUBVERSION EASE ── <span>Easier</span>
+            </div>
+        </div>
+        
+        <div id="risk-point" class="absolute w-4 h-4 bg-red-500 border-2 border-white rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] hidden transition-all duration-500"></div>
+    </div>
+</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

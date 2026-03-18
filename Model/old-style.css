@@ -1,0 +1,69 @@
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* Dark background */
+        }
+        #tooltip {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+        }
+    /* 1. Move the white circle (the input) to the right when checked */
+    #mitigation-toggle:checked {
+        left: 1rem !important; /* Adjust this value if you want it to move further */
+        border-color: #10B981 !important; /* Optional: Change border to Green (Emerald 500) */
+    }
+
+    /* 2. Change the background color of the label (the track) when checked */
+    #mitigation-toggle:checked + .toggle-label {
+        background-color: #10B981; /* Tailwind green-500 */
+    }
+#exportContainer {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%); /* Perfectly centers the div */
+    z-index: 1000; 
+  }
+  
+  .export-btn {
+    padding: 10px 20px;
+    background-color: #2337c6; /*Blue*/
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.2s;
+  }
+
+  .export-btn:hover {
+    background-color: #218838;
+  }
+        .control-panel, .info-panel {
+            background-color: rgba(31, 41, 55, 0.9); /* Gray-800 with opacity */
+            border: 1px solid #374151; /* Gray-700 */
+        }
+        .control-section {
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #374151;
+        }
+        .control-section:last-child {
+            border-bottom: none;
+        }
+        /* Style for the canvas to ensure it fills the space */
+        #visualization-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Toggle Switch Styles */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }

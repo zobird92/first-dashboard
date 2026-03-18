@@ -3,7 +3,7 @@ const renderRiskMatrix2D = () => {
             const { xVal, yVal } = aggregationKeys;
 
             const grouped = drilldownData.reduce((g, i) => {
-                const k = `${i['Difficulty']}-${i['Mission Impact']}`;
+                const k = `${i[xVal]}-${i[yVal]}`;
                 if (!g[k]) g[k] = [];
                 g[k].push(i);
                 return g;
@@ -88,21 +88,30 @@ const renderRiskMatrix2D = () => {
             lucide.createIcons();
         };
 
-        const generateAxisControls = () => {
-            const div = document.getElementById('axis-controls');
-            div.innerHTML = `
-                <label class="block text-sm text-gray-400 mb-1">X-Axis Field</label>
-                <select id="select-x-axis" onchange="handleAxisChange('x', this.value)" class="w-full bg-gray-700 text-white border border-gray-600 rounded-md p-2 mb-3">
-                    ${FIELD_LABELS.filter(l => l !== currentYField).map(l => `<option value="${l}" ${currentXField === l ? 'selected' : ''}>${l}</option>`).join('')}
-                </select>
-                <label class="block text-sm text-gray-400 mb-1">Y-Axis (Depth) Field</label>
-                <select id="select-y-axis" onchange="handleAxisChange('y', this.value)" class="w-full bg-gray-700 text-white border border-gray-600 rounded-md p-2">
-                    ${FIELD_LABELS.filter(l => l !== currentXField).map(l => `<option value="${l}" ${currentYField === l ? 'selected' : ''}>${l}</option>`).join('')}
-                </select>
-            `;
-        };
+        window.generateAxisControls = () => {
+    const div = document.getElementById('axis-controls');
+    if (!div) return;
 
-        const generateSeverityFilters = () => {
+    div.innerHTML = `
+        <div class="control-section">
+            <label class="block text-sm text-gray-400 mb-1">X-Axis</label>
+            <select onchange="window.handleAxisChange('x', this.value)" class="w-full bg-gray-700 text-white border border-gray-600 rounded-md p-2 mb-3">
+                ${window.FIELD_LABELS
+                    .filter(l => l !== window.currentYField)
+                    .map(l => `<option value="${l}" ${window.currentXField === l ? 'selected' : ''}>${l}</option>`).join('')}
+            </select>
+
+            <label class="block text-sm text-gray-400 mb-1">Y-Axis (Depth)</label>
+            <select onchange="window.handleAxisChange('y', this.value)" class="w-full bg-gray-700 text-white border border-gray-600 rounded-md p-2">
+                ${window.FIELD_LABELS
+                    .filter(l => l !== window.currentXField)
+                    .map(l => `<option value="${l}" ${window.currentYField === l ? 'selected' : ''}>${l}</option>`).join('')}
+            </select>
+        </div>
+    `;
+};
+
+        window.generateSeverityFilters = () => {
             const div = document.getElementById('severity-filters');
             let html = `<strong class="block text-gray-200 mb-3 text-sm">Filter by Risk Level</strong>`;
             Object.keys(RISK_CATEGORIES).forEach(cat => {
@@ -118,7 +127,7 @@ const renderRiskMatrix2D = () => {
             div.innerHTML = html;
         };
 
-        const updateLegend = () => {
+        window.updateLegend = () => {
             const legendTitle = document.getElementById('legend-title');
             const legendContent = document.getElementById('legend-content');
 
@@ -165,3 +174,79 @@ const renderRiskMatrix2D = () => {
             if (score >= 9) return 'bg-orange-500 ring-orange-400';
             return 'bg-green-500 ring-green-400';
         };
+
+        window.renderDynamicFilters = () => {
+    const div = document.getElementById('dynamic-filters');
+    if (!div) return;
+    
+    div.innerHTML = '<strong class="block text-gray-200 mb-3 text-sm">Active Filters</strong>';
+    
+    const xK = window.FIELD_MAP[window.currentXField];
+    const yK = window.FIELD_MAP[window.currentYField];
+    const relevantFields = [xK, yK];
+
+    relevantFields.forEach(field => {
+        if (!window.activeFilters[field]) return;
+
+        const fieldLabel = Object.keys(window.FIELD_MAP).find(key => window.FIELD_MAP[key] === field);
+        const section = document.createElement('div');
+        section.className = 'mb-4';
+        section.innerHTML = `<span class="text-xs font-bold text-indigo-400 uppercase tracking-widest">${fieldLabel}</span>`;
+
+        const list = document.createElement('div');
+        list.className = 'mt-2 space-y-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar';
+
+        // Get unique values for this field from the data
+        const uniqueValues = [...new Set(window.data.map(d => d[field]))].sort();
+
+        uniqueValues.forEach(val => {
+            const isChecked = window.activeFilters[field].has(val);
+            const item = document.createElement('label');
+            item.className = 'flex items-center text-xs text-gray-400 hover:text-white cursor-pointer';
+            item.innerHTML = `
+                <input type="checkbox" class="mr-2 rounded bg-gray-700 border-gray-600 w-3 h-3 accent-indigo-500" 
+                       ${isChecked ? 'checked' : ''} 
+                       onchange="handleFilterChange('${field}', '${val}', this.checked)">
+                <span class="truncate">${val}</span>
+            `;
+            list.appendChild(item);
+        });
+
+        section.appendChild(list);
+        div.appendChild(section);
+    });
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+};
+
+// Helper function needed for the checkboxes above
+window.handleFilterChange = (field, value, isChecked) => {
+    if (isChecked) {
+        window.activeFilters[field].add(value);
+    } else {
+        window.activeFilters[field].delete(value);
+    }
+    window.renderChart();
+};
+
+// Handles X and Y axis dropdown changes
+window.handleAxisChange = (axis, value) => {
+    if (axis === 'x') window.currentXField = value;
+    if (axis === 'y') window.currentYField = value;
+    
+    window.generateAxisControls(); // Refresh options
+    window.renderDynamicFilters(); // Refresh filters for new axis
+    if (window.renderChart) window.renderChart(); // Redraw 3D
+};
+
+// Handles Severity Checkbox changes (Watch List, Risk Open, etc.)
+window.handleSeverityChange = (category, isChecked) => {
+    if (isChecked) {
+        window.activeSeverityFilters.add(category);
+    } else {
+        window.activeSeverityFilters.delete(category);
+    }
+    window.renderChart(); // Updates the 3D Bars
+};

@@ -1,3 +1,21 @@
+// Global Configuration
+window.RISK_CATEGORIES = {
+    "Watch List": { color: "bg-green-500" },
+    "Risk Open": { color: "bg-orange-500" },
+    "Subverted - Risk Realized": { color: "bg-red-500" }
+};
+
+window.currentXField = "Subversion Ease";
+window.currentYField = "Severity";
+window.activeSeverityFilters = new Set(Object.keys(window.RISK_CATEGORIES));
+window.activeFilters = {};
+window.FIELD_MAP = {
+    "Subversion Ease": "Subversion Ease",
+    "Severity": "Severity",
+    "Detection Capability": "Detection Capability"
+};
+
+window.FIELD_LABELS = Object.keys(window.FIELD_MAP);
 // Shared Global Variables
 window.data = [];
 window.uniqueDates = [];
@@ -11,50 +29,58 @@ window.drilldownData = [];
 window.aggregationKeys = { xVal: '', yVal: '' };
 
 window.FIELD_MAP = {
-            'Mission Impact': 'Mission Impact',
-            'Difficulty': 'Difficulty',
-            'Risk Score': 'Risk Score',
-            'Vulnerability Surface': 'Vulnerability Surface',
-            'Adversarial Subversion': 'Adversarial Subversion',
-            'Site': 'Site',
-            'Subversion Risk Type': 'Subversion Risk Type',
-            'Weapon System': 'Weapon System',
-            'Facility': 'Facility',
-            'Capability': 'Capability',
-            'Date': 'Date',
-            'Risk Level': 'Risk Level',
-            'Mitigation Status': 'Mitigation Status',
-            'Mitigation Cost': 'Mitigation Cost'
-        };
+    'Vulnerability Surface': 'Vulnerability Surface',
+    'Adversarial Subversion': 'Adversarial Subversion',
+    'Site': 'Site',
+    'Subversion Risk Type': 'Subversion Risk Type',
+    'Weapon System': 'Weapon System',
+    'Facility': 'Facility',
+    'Capability': 'Capability',
+    'Date': 'Date',
+    'Risk Level': 'Risk Level',
+    'Mitigation Status': 'Mitigation Status',
+    'Mitigation Cost': 'Mitigation Cost'
+};
 
-        const FIELD_LABELS = [
-            'Vulnerability Surface',
-            'Adversarial Subversion',
-            'Site',
-            'Subversion Risk Type',
-            'Weapon System',
-            'Facility',
-            'Capability'
-        ];
+window.FIELD_LABELS = [
+    'Vulnerability Surface',
+    'Adversarial Subversion',
+    'Site',
+    'Subversion Risk Type',
+    'Weapon System',
+    'Facility',
+    'Capability'
+];
 
-        const RISK_CATEGORIES = {
-            "Watch List": { color: "bg-green-500" },
-            "Risk Open": { color: "bg-orange-500" },
-            "Subverted - Risk Realized": { color: "bg-red-500" }
-        };
+// Ported from old-script.js to fix timeline ordering
+function parseQuarterDate(qstr) {
+    const m = /^Q([1-4])\s+(\d{4})$/.exec(qstr?.trim() ?? "");
+    if (!m) return Number.POSITIVE_INFINITY;
+    return Number(m[2]) * 4 + (Number(m[1]) - 1);
+}
 
-    window.loadDataFromJson = async function() {
-        const response = await fetch('data/subversion_risk_data.json');
-        window.data = await response.json();
+window.loadDataFromJson = async function() {
+    const response = await fetch('data/subversion_risk_data.json');
+    const json = await response.json();
     
-         // 1. Extract unique dates and set default
-        window.uniqueDates = [...new Set(window.data.map(d => d.Date))];
-        window.currentDate = window.uniqueDates[0];
+    window.data = json.map(row => ({
+        ...row,
+        "Mission Impact": Number(row["Mission Impact"]),
+        "Difficulty": Number(row["Difficulty"]),
+        "Risk Score": Number(row["Risk Score"]),
+        "Mitigation Cost": Number(row["Mitigation Cost"])
+    }));
 
-        // 2. Initialize activeFilters for every field in FIELD_LABELS
-        FIELD_LABELS.forEach(label => {
-            const key = FIELD_MAP[label];
-            const uniqueValues = [...new Set(window.data.map(d => d[key]))];
-            window.activeFilters[key] = new Set(uniqueValues);
-        });
-    }
+    // Sort dates properly
+    window.uniqueDates = [...new Set(window.data.map(d => d.Date))]
+        .sort((a, b) => parseQuarterDate(a) - parseQuarterDate(b));
+    
+    window.currentDate = window.uniqueDates[0];
+
+    // Initialize filter sets
+    window.FIELD_LABELS.forEach(label => {
+        const key = window.FIELD_MAP[label];
+        const uniqueVals = [...new Set(window.data.map(d => d[key]))].sort();
+        window.activeFilters[key] = new Set(uniqueVals);
+    });
+};
