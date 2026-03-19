@@ -1,92 +1,109 @@
 const renderRiskMatrix2D = () => {
-            const container = document.getElementById('view-2d-container');
-            const { xVal, yVal } = aggregationKeys;
+    const container = document.getElementById('view-2d-container');
+    
+    // Use the global window variables your 3D code populates
+    const dData = window.drilldownData;
+    const aggKeys = window.aggregationKeys;
 
-            const grouped = drilldownData.reduce((g, i) => {
-                const k = `${i[xVal]}-${i[yVal]}`;
-                if (!g[k]) g[k] = [];
-                g[k].push(i);
-                return g;
-            }, {});
+    if (!dData || !aggKeys) {
+        console.error("Missing drilldown data or keys");
+        return;
+    }
 
-            const total = drilldownData.length;
-            const avg = total > 0 ? Math.round(drilldownData.reduce((s, i) => s + Number(i['Risk Score']), 0) / total) : 0;
+    const { xVal, yVal } = aggKeys;
 
-            const yLabels = [5, 4, 3, 2, 1];
-            const xLabels = [1, 2, 3, 4, 5];
+    // Use window.FIELD_MAP to translate the axis labels to actual JSON keys
+    const xKey = window.FIELD_MAP[window.currentXField]; 
+    const yKey = window.FIELD_MAP[window.currentYField];
 
-            container.innerHTML = `
-                <div class="flex flex-col sm:flex-row justify-between items-start mb-8 bg-gray-800 p-4 rounded-lg border border-gray-700 sticky top-0 z-10">
-                    <button onclick="setViewMode('3D')" class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
-                        <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
-                        <span>Back to 3D View</span>
-                    </button>
-                    <div class="ml-4">
-                        <h2 class="text-xl font-bold text-indigo-400">Drill-down: ${xVal} / ${yVal}</h2>
-                    </div>
-                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 w-full sm:max-w-xs mt-4 sm:mt-0 text-center sm:text-left">
-                        <h3 class="text-sm font-semibold text-gray-300">Risk Summary</h3>
-                        <p class="text-3xl font-bold ${avg >= 17 ? 'text-red-400' : avg >= 9 ? 'text-yellow-400' : 'text-green-400'}">${avg}</p>
-                        <p class="text-sm text-gray-500">Average Risk Level Score</p>
-                        <p class="mt-2 text-xl font-bold text-gray-300">${total} <span class="text-sm text-gray-400 ml-1">Total Items</span></p>
+    const grouped = dData.reduce((g, i) => {
+        // Use the raw values from the data row (e.g., 1, 2, 3, 4, 5)
+        const xNum = i[xKey];
+        const yNum = i[yKey];
+        const k = `${xNum}-${yNum}`;
+        if (!g[k]) g[k] = [];
+        g[k].push(i);
+        return g;
+    }, {});
+
+    const total = dData.length;
+    const avg = total > 0 ? Math.round(dData.reduce((s, i) => s + Number(i['Risk Score'] || 0), 0) / total) : 0;
+
+    const yLabels = [5, 4, 3, 2, 1];
+    const xLabels = [1, 2, 3, 4, 5];
+
+    container.innerHTML = `
+        <div class="flex flex-col sm:flex-row justify-between items-start mb-8 bg-gray-800 p-4 rounded-lg border border-gray-700 sticky top-0 z-10">
+            <button onclick="window.setViewMode('3D')" class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+                <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+                <span>Back to 3D View</span>
+            </button>
+            <div class="ml-4">
+                <h2 class="text-xl font-bold text-indigo-400">Drill-down: ${xVal} / ${yVal}</h2>
+            </div>
+            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 w-full sm:max-w-xs mt-4 sm:mt-0 text-center sm:text-left">
+                <h3 class="text-sm font-semibold text-gray-300">Risk Summary</h3>
+                <p class="text-3xl font-bold ${avg >= 17 ? 'text-red-400' : avg >= 9 ? 'text-yellow-400' : 'text-green-400'}">${avg}</p>
+                <p class="text-sm text-gray-500">Average Risk Level Score</p>
+                <p class="mt-2 text-xl font-bold text-gray-300">${total} <span class="text-sm text-gray-400 ml-1">Total Items</span></p>
+            </div>
+        </div>
+
+        <div class="flex flex-col border border-gray-700 rounded-xl bg-gray-900 mx-auto max-w-2xl p-4">
+            <div class="flex">
+                <div class="flex flex-col items-center justify-between py-2 mr-1 h-[320px]">
+                    <span class="text-[9px] font-bold text-red-400 uppercase rotate-180" style="writing-mode: vertical-lr;">More Severe</span>
+                    <div class="w-px flex-grow bg-gray-600 relative my-2"></div>
+                    <span class="text-[9px] font-bold text-green-400 uppercase rotate-180" style="writing-mode: vertical-lr;">Less Severe</span>
+                </div>
+
+                <div class="flex items-center">
+                    <div class="text-xs font-bold text-gray-400 uppercase rotate-180 mr-2" style="writing-mode: vertical-lr;">Severity</div>
+                    <div class="w-12 flex flex-col justify-end text-sm text-gray-400">
+                        ${yLabels.map(y => `<div class="h-16 flex items-center justify-center"><span class="p-1 rounded bg-gray-700">${y}</span></div>`).join('')}
                     </div>
                 </div>
 
-                <div class="flex flex-col border border-gray-700 rounded-xl bg-gray-900 mx-auto max-w-2xl p-4">
-                    <div class="flex">
-                        <div class="flex flex-col items-center justify-between py-2 mr-1 h-[320px]">
-                            <span class="text-[9px] font-bold text-red-400 uppercase rotate-180" style="writing-mode: vertical-lr;">More Severe</span>
-                            <div class="w-px flex-grow bg-gray-600 relative my-2"></div>
-                            <span class="text-[9px] font-bold text-green-400 uppercase rotate-180" style="writing-mode: vertical-lr;">Less Severe</span>
-                        </div>
-
-                        <div class="flex items-center">
-                            <div class="text-xs font-bold text-gray-400 uppercase rotate-180 mr-2" style="writing-mode: vertical-lr;">Severity</div>
-                            <div class="w-12 flex flex-col justify-end text-sm text-gray-400">
-                                ${yLabels.map(y => `<div class="h-16 flex items-center justify-center"><span class="p-1 rounded bg-gray-700">${y}</span></div>`).join('')}
-                            </div>
-                        </div>
-
-                        <div class="flex-grow grid grid-cols-5 border-t border-l border-gray-700 relative">
-                            ${yLabels.flatMap(y => xLabels.map(x => {
-                                const risks = grouped[`${x}-${y}`] || [];
-                                return `
-                                    <div class="h-16 border-r border-b border-gray-700 flex items-center justify-center p-1 relative ${getCellBackgroundColor(x, y)}">
-                                        ${risks.map((r, i) => `
-                                            <div class="absolute w-3 h-3 rounded-full ring-2 ${getRiskColorClass(r['Risk Score'])}" 
-                                                 style="top: ${20 + (i * 10) % 60}%; left: ${20 + (i * 20) % 60}%;"
-                                                 title="Risk Score: ${r['Risk Score']}">
-                                            </div>
-                                        `).join('')}
-                                        ${risks.length === 0 ? `<span class="text-[8px] text-gray-600 opacity-40">(${x},${y})</span>` : ''}
+                <div class="flex-grow grid grid-cols-5 border-t border-l border-gray-700 relative">
+                    ${yLabels.flatMap(y => xLabels.map(x => {
+                        const risks = grouped[`${x}-${y}`] || [];
+                        return `
+                            <div class="h-16 border-r border-b border-gray-700 flex items-center justify-center p-1 relative ${getCellBackgroundColor(x, y)}">
+                                ${risks.map((r, i) => `
+                                    <div class="absolute w-3 h-3 rounded-full ring-2 ${getRiskColorClass(r['Risk Score'])}" 
+                                         style="top: ${20 + (i * 10) % 60}%; left: ${20 + (i * 20) % 60}%;"
+                                         title="Risk Score: ${r['Risk Score']}">
                                     </div>
-                                `;
-                            })).join('')}
-                        </div>
-                    </div>
-
-                    <div class="flex">
-                        <div class="w-[88px]"></div>
-                        <div class="flex-grow grid grid-cols-5 text-sm text-gray-400">
-                            ${xLabels.map(x => `<div class="h-8 flex items-center justify-center"><span class="p-1 rounded bg-gray-700">${x}</span></div>`).join('')}
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col items-center mt-2">
-                        <div class="flex w-full items-center">
-                            <div class="w-[88px]"></div>
-                            <div class="flex-grow flex items-center justify-between px-4">
-                                <span class="text-[9px] text-gray-500 uppercase">Harder</span>
-                                <div class="h-px flex-grow bg-gray-600 mx-4"></div>
-                                <span class="text-[9px] text-indigo-400 uppercase">Easier</span>
+                                `).join('')}
+                                ${risks.length === 0 ? `<span class="text-[8px] text-gray-600 opacity-40">(${x},${y})</span>` : ''}
                             </div>
-                        </div>
-                        <h4 class="text-[12px] font-bold text-gray-400 uppercase tracking-widest py-1">Subversion Ease</h4>
+                        `;
+                    })).join('')}
+                </div>
+            </div>
+
+            <div class="flex">
+                <div class="w-[88px]"></div>
+                <div class="flex-grow grid grid-cols-5 text-sm text-gray-400">
+                    ${xLabels.map(x => `<div class="h-8 flex items-center justify-center"><span class="p-1 rounded bg-gray-700">${x}</span></div>`).join('')}
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center mt-2">
+                <div class="flex w-full items-center">
+                    <div class="w-[88px]"></div>
+                    <div class="flex-grow flex items-center justify-between px-4">
+                        <span class="text-[9px] text-gray-500 uppercase">Harder</span>
+                        <div class="h-px flex-grow bg-gray-600 mx-4"></div>
+                        <span class="text-[9px] text-indigo-400 uppercase">Easier</span>
                     </div>
                 </div>
-            `;
-            lucide.createIcons();
-        };
+                <h4 class="text-[12px] font-bold text-gray-400 uppercase tracking-widest py-1">Subversion Ease</h4>
+            </div>
+        </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+};
 
         window.generateAxisControls = () => {
     const div = document.getElementById('axis-controls');
@@ -126,6 +143,35 @@ const renderRiskMatrix2D = () => {
             });
             div.innerHTML = html;
         };
+
+    window.setViewMode = (mode) => {
+    const container3d = document.getElementById('view-3d-container');
+    const container2d = document.getElementById('view-2d-container');
+
+    if (!container3d || !container2d) {
+        console.error("View containers not found in HTML!");
+        return;
+    }
+
+    if (mode === '2D') {
+            container3d.classList.add('hidden');
+            container2d.classList.remove('hidden');
+            if (typeof renderRiskMatrix2D === 'function') {
+                renderRiskMatrix2D();
+            }
+            } else {
+                container2d.classList.add('hidden');
+                container3d.classList.remove('hidden');
+                // Re-render the 3D view if needed
+                if (window.renderChart) window.renderChart();
+            }
+        };
+
+        // Initialize the Back Button Listener
+        const backBtn = document.getElementById('backTo3dBtn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => window.setViewMode('3D'));
+        }
 
         window.updateLegend = () => {
             const legendTitle = document.getElementById('legend-title');
@@ -175,7 +221,7 @@ const renderRiskMatrix2D = () => {
             return 'bg-green-500 ring-green-400';
         };
 
-        window.renderDynamicFilters = () => {
+    window.renderDynamicFilters = () => {
     const div = document.getElementById('dynamic-filters');
     if (!div) return;
     
@@ -233,12 +279,12 @@ window.handleFilterChange = (field, value, isChecked) => {
 
 // Handles X and Y axis dropdown changes
 window.handleAxisChange = (axis, value) => {
-    if (axis === 'x') window.currentXField = value;
-    if (axis === 'y') window.currentYField = value;
+    if (axis === 'x') window.currentXField = value; // Overwrites the initial value
+    if (axis === 'y') window.currentYField = value; // Overwrites the initial value
     
-    window.generateAxisControls(); // Refresh options
-    window.renderDynamicFilters(); // Refresh filters for new axis
-    if (window.renderChart) window.renderChart(); // Redraw 3D
+    window.generateAxisControls(); 
+    window.renderDynamicFilters(); 
+    if (window.renderChart) window.renderChart(); // Re-runs the 3D logic with the NEW value
 };
 
 // Handles Severity Checkbox changes (Watch List, Risk Open, etc.)

@@ -52,6 +52,9 @@ window.FIELD_LABELS = [
     'Capability'
 ];
 
+window.currentXField = 'Vulnerability Surface';
+window.currentYField = 'Adversarial Subversion';
+
 // Ported from old-script.js to fix timeline ordering
 function parseQuarterDate(qstr) {
     const m = /^Q([1-4])\s+(\d{4})$/.exec(qstr?.trim() ?? "");
@@ -60,27 +63,42 @@ function parseQuarterDate(qstr) {
 }
 
 window.loadDataFromJson = async function() {
-    const response = await fetch('data/subversion_risk_data.json');
-    const json = await response.json();
-    
-    window.data = json.map(row => ({
-        ...row,
-        "Mission Impact": Number(row["Mission Impact"]),
-        "Difficulty": Number(row["Difficulty"]),
-        "Risk Score": Number(row["Risk Score"]),
-        "Mitigation Cost": Number(row["Mitigation Cost"])
-    }));
+    try {
+        const response = await fetch('data/subversion_risk_data.json');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const json = await response.json(); 
+        
+        // 1. Map and Coerce Data
+        window.data = json.map(row => ({
+            ...row,
+            "Mission Impact": Number(row["Mission Impact"] || 0),
+            "Difficulty": Number(row["Difficulty"] || 0),
+            "Risk Score": Number(row["Risk Score"] || 0),
+            "Mitigation Cost": Number(row["Mitigation Cost"] || 0)
+        }));
 
-    // Sort dates properly
-    window.uniqueDates = [...new Set(window.data.map(d => d.Date))]
-        .sort((a, b) => parseQuarterDate(a) - parseQuarterDate(b));
-    
-    window.currentDate = window.uniqueDates[0];
+        // 2. Sort dates properly using the Quarter Date parser
+        window.uniqueDates = [...new Set(window.data.map(d => d.Date))]
+            .sort((a, b) => parseQuarterDate(a) - parseQuarterDate(b));
+        
+        window.currentDate = window.uniqueDates[0];
 
-    // Initialize filter sets
-    window.FIELD_LABELS.forEach(label => {
-        const key = window.FIELD_MAP[label];
-        const uniqueVals = [...new Set(window.data.map(d => d[key]))].sort();
-        window.activeFilters[key] = new Set(uniqueVals);
-    });
+        // 3. Initialize activeFilters with ALL unique values
+        window.FIELD_LABELS.forEach(label => {
+            const key = window.FIELD_MAP[label];
+            if (key) {
+                // CRITICAL: Trim the values here so they match the reducer's keys later
+                const uniqueVals = [...new Set(window.data.map(d => String(d[key] || "").trim()))]
+                    .filter(val => val !== "")
+                    .sort();
+                window.activeFilters[key] = new Set(uniqueVals);
+            }
+        });
+
+        console.log("Data loaded and filters initialized:", window.activeFilters);
+
+    } catch (err) {
+        console.error("Failed to load data:", err);
+    }
 };
