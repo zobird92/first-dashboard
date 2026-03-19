@@ -67,3 +67,46 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #68D391;
         }
+
+        /* --- DASHBOARD CORE STYLES --- */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    background-color: #0a0a0c; 
+    font-family: 'Inter', sans-serif; 
+}
+
+canvas { 
+    display: block; 
+}
+
+/* Custom Scrollbar for Sidebar and Detail View */
+.custom-scrollbar::-webkit-scrollbar { 
+    width: 4px; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-track { 
+    background: #1f2937; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb { 
+    background: #4f46e5; 
+    border-radius: 10px; 
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar { 
+    width: 2px; 
+}
+
+/* Tooltip & Overlays */
+#tooltip { 
+    pointer-events: none; 
+    transition: opacity 0.1s; 
+    z-index: 50; 
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none;
+}

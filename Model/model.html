@@ -3,108 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Subversion Risk 3D Visual</title>
+    <title>Risk Assessment Dashboard | Prototype</title>
     
-    <link rel="stylesheet" href="css/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script src="lib/three.min.js"></script>
+    <script src="lib/OrbitControls.js"></script>
+    <script src="lib/xlsx.full.min.js"></script>
+
+    <link rel="stylesheet" href="css/style.css">
 </head>
+<body class="antialiased">
 
-<body class="bg-gray-900 overflow-hidden">
-
-    <div id="view-3d-container" class="relative w-full h-screen">
-        <canvas id="visualization-canvas" class="w-full h-full block"></canvas>
-
-        <div id="exportContainer" class="absolute top-5 left-1/2 -translate-x-1/2 z-50">
-            <button id="exportBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full font-bold shadow-2xl">
-                📥 Export Visible Data
-            </button>
-        </div>
-
-        <div id="info" class="absolute top-4 left-4 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50">
-            <h3 class="text-lg font-bold text-indigo-400">Subversion Risk Visual</h3>
-            <div class="text-xs text-gray-400 mt-1 space-y-1">
-                <p><strong>X-Axis:</strong> Vulnerability Surface</p>
-                <p><strong>Y-Axis:</strong> Adversarial Subversion</p>
-                <p><strong>Z-Axis:</strong> Risk Score</p>
-            </div>
-        </div>
-
-        <div id="legend" class="absolute bottom-4 left-4 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50">
-            <strong id="legend-title" class="text-sm block mb-2 text-gray-400 uppercase tracking-wider">Risk Level</strong>
-            <div id="legend-content" class="space-y-2"></div>
-        </div>
-
-        <div id="time-slider-panel" class="absolute bottom-8 left-1/2 -translate-x-1/2 p-4 rounded-xl bg-gray-800/95 border border-gray-700 w-80 z-50 shadow-2xl">
-            <input type="range" id="time-slider" min="0" max="11" value="11" oninput="handleTimeChange(this.value)" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-500">
-            <div id="current-date-display" class="text-center text-indigo-400 font-mono font-bold mt-2"></div>
-        </div>
-
-        <div id="controls" class="absolute top-4 right-4 w-72 p-4 rounded-lg bg-gray-800/90 border border-gray-700 text-white z-50 max-h-[90vh] overflow-y-auto">
-            <h4 class="font-bold text-indigo-400 border-b border-gray-700 pb-2 mb-4">Configuration & Filters</h4>
-            
-            <div class="mb-4">
-                <label class="flex items-center justify-between cursor-pointer">
-                    <span class="text-sm">Mitigation View</span>
-                    <input type="checkbox" id="mitigation-toggle" class="w-5 h-5 accent-green-500">
-                </label>
-            </div>
-
-            <div id="axis-controls"></div>
-            <div id="severity-filters" class="mt-6"></div>
-            <div id="dynamic-filters" class="mt-6"></div>
-        </div>
-        
-        <div id="resetContainer" class="absolute top-1/2 left-0 -translate-y-1/2 z-50">
-            <button id="resetBtn" class="bg-gray-700 hover:bg-indigo-600 text-white py-4 px-2 rounded-r-md transition-colors" style="writing-mode: vertical-rl;">
-                🔄 RESET VIEW
-            </button>
-        </div>
-
-        <div id="tooltip" class="fixed p-3 bg-black/90 text-white text-xs rounded border border-gray-600 hidden pointer-events-none z-[100]"></div>
-    </div>
-
-    <div id="view-2d-container" class="hidden fixed inset-0 bg-[#0f172a] z-[60] p-10 overflow-y-auto flex flex-col items-center">
-    <div class="w-full max-w-5xl flex justify-between items-start mb-10 bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-        <button onclick="window.setViewMode('3D')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-bold">
-            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Back to 3D View
-        </button>
-        
-        <h2 id="drilldown-header" class="text-xl font-bold text-indigo-400">Drill-down: [Title]</h2>
-
-        <div class="bg-[#0f172a] p-4 rounded-lg border border-slate-700 w-64">
-            <p class="text-xs text-gray-400 font-bold uppercase">Risk Summary</p>
-            <div id="summary-score" class="text-4xl font-bold text-red-500 my-1">0</div>
-            <p class="text-[10px] text-gray-500">Average Risk Level Score in Group</p>
-            <p class="text-[10px] text-white mt-2"><span id="summary-count" class="font-bold">0</span> Total Items Plotted</p>
+    <div id="initial-loader" class="fixed inset-0 z-100 flex items-center justify-center bg-[#0a0a0c]">
+        <div class="text-center">
+            <div class="inline-block w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p class="text-indigo-400 font-mono text-sm tracking-widest uppercase">Initializing Engine...</p>
         </div>
     </div>
 
-    <div class="relative bg-[#1e293b] p-12 rounded-2xl border border-slate-700 shadow-2xl">
-        <div id="heatmap-grid" class="relative grid grid-cols-5 grid-rows-5 gap-1 w-[500px] h-[400px] border-2 border-slate-800">
-            <div id="risk-point" class="absolute w-4 h-4 bg-red-500 border-2 border-white rounded-full shadow-[0_0_15px_rgba(239,68,68,0.8)] hidden transition-all duration-500 z-20"></div>
+    <canvas id="visualization-canvas" class="fixed inset-0"></canvas>
+
+    <div id="tooltip" class="fixed hidden pointer-events-none z-50 glass-panel p-3 text-xs shadow-2xl"></div>
+
+    <header class="fixed top-0 left-0 w-full p-6 pointer-events-none flex justify-between items-start z-10">
+        <div class="pointer-events-auto">
+            <h1 class="text-xl font-black tracking-tighter text-white uppercase italic">Subversion<span class="text-indigo-500">Risk</span>_v1.0</h1>
+            <p id="current-date-display" class="text-indigo-400 font-mono text-xs mt-1 italic"></p>
         </div>
         
-        <div class="absolute -left-4 top-1/2 -translate-y-1/2 -rotate-90 flex items-center gap-4 text-[10px] font-bold tracking-widest text-white uppercase">
-            <span class="text-green-500">Less Severe</span> ── SEVERITY ── <span class="text-red-500">More Severe</span>
+        <div class="flex gap-2 pointer-events-auto">
+            <button id="export-data-btn" class="glass-panel px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-indigo-600/20 transition-all">Export XLSX</button>
+            <button id="reset-dashboard-btn" class="glass-panel px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-600/20 transition-all text-red-400">Reset System</button>
         </div>
+    </header>
 
-                <div class="mt-6 flex flex-col items-center">
-            <div class="flex items-center gap-8 text-[10px] font-bold tracking-widest text-white uppercase">
-                <span>Harder</span> ── SUBVERSION EASE ── <span>Easier</span>
+    <aside class="fixed top-24 left-6 w-72 bottom-24 flex flex-col gap-4 pointer-events-none z-10">
+        <div id="axis-controls" class="pointer-events-auto"></div>
+        <div id="severity-filters" class="pointer-events-auto"></div>
+        <div id="dynamic-filters" class="pointer-events-auto flex-1 overflow-y-auto custom-scrollbar pr-2"></div>
+    </aside>
+
+    <div class="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-10">
+        <div class="glass-panel p-4">
+            <input type="range" id="time-slider" class="w-full h-1" min="0" value="0">
+            <div class="flex justify-between mt-2 text-xs font-black text-gray-500 uppercase tracking-tighter">
+                <span>Earliest Quarter</span>
+                <span class="text-indigo-400 font-mono">Historical Timeline</span>
+                <span>Current State</span>
             </div>
         </div>
     </div>
-</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <div id="detail-view" class="fixed inset-0 z-60 hidden flex items-center justify-center p-6 bg-[#0a0a0c]/90"></div>
 
-    <script src="js/data-processor.js"></script>
-    <script src="js/ui-controls.js"></script>
-    <script src="js/app.js"></script>
+    <div id="error-message" class="fixed bottom-4 right-4 hidden bg-red-900/80 text-red-200 p-4 rounded-lg text-xs z-70 border border-red-500"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/engine.js"></script>
 
 </body>
 </html>
