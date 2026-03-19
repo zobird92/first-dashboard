@@ -1,315 +1,202 @@
 // --- THREE.JS GLOBALS ---
-// These variables manage the 3D scene state and must be accessible to the engine
-
 let scene, camera, renderer, controls, raycaster, mouse;
 let bars = [];
 let hoveredBar = null;
 
-// --- THREE.JS ENGINE & RENDERING ---
-
+/**
+ * Initializes the 3D environment with the exact parameters of the original.
+ * Includes depth effects and interaction constraints.
+ */
 function initThree() {
     const canvas = document.getElementById('visualization-canvas');
     if (!canvas) return;
 
+    // 1. Scene & Environment
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0c); // Deep dark background
+    scene.background = new THREE.Color(0x0a0a0c);
+    // Restoration: Added Fog to give the grid a sense of infinite depth
+    scene.fog = new THREE.Fog(0x0a0a0c, 20, 100);
 
+    // 2. Camera Setup
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(18, 18, 18);
+    camera.position.set(22, 22, 22); // Restored original viewpoint
     camera.lookAt(0, 0, 0);
 
+    // 3. Renderer Setup (High Performance Mode)
     renderer = new THREE.WebGLRenderer({ 
         canvas, 
-        antialias: true,
-        alpha: true 
+        antialias: true, 
+        alpha: true,
+        powerPreference: "high-performance" 
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+    // 4. Controls (Restored constraints and smooth damping)
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.maxDistance = 50;
+    controls.screenSpacePanning = false;
     controls.minDistance = 5;
+    controls.maxDistance = 70;
+    controls.maxPolarAngle = Math.PI / 2.1; // Prevents looking under the floor
 
-    // Lighting Configuration
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // 5. Lighting (Multi-point setup for 3D depth)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
     scene.add(ambientLight);
 
-    const mainLight = new THREE.DirectionalLight(0x6366f1, 1.2); // Indigo tinted light
-    mainLight.position.set(10, 20, 10);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    mainLight.position.set(10, 30, 10);
+    mainLight.castShadow = false; 
     scene.add(mainLight);
 
-    const fillLight = new THREE.PointLight(0xffffff, 0.5);
-    fillLight.position.set(-10, -5, -10);
-    scene.add(fillLight);
+    const blueFill = new THREE.PointLight(0x6366f1, 0.6);
+    blueFill.position.set(-20, 10, -20);
+    scene.add(blueFill);
 
-    // Raycasting & Interaction Setup
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
 
-    // Event binding for interactions (handlers are in ui.js)
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('click', onMouseClick);
+    // 6. Interaction Listeners
     window.addEventListener('resize', onWindowResize);
-    
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mousedown', onCanvasClick); 
+
     animate();
-    renderChart();
 }
 
+/**
+ * The Data-to-3D Mapping Engine.
+ * This restores the full "Stacked Mesh" logic and coordinate preservation.
+ */
 function renderChart() {
-    if (!scene || viewMode !== '3d') return;
+    if (!scene) return;
 
-    // Clean up existing bars
-    bars.forEach(bar => scene.remove(bar));
+    // A. Thorough Memory Cleanup
+    bars.forEach(b => {
+        scene.remove(b);
+        if (b.geometry) b.geometry.dispose();
+        if (b.material) {
+            if (Array.isArray(b.material)) b.material.forEach(m => m.dispose());
+            else b.material.dispose();
+        }
+    });
     bars = [];
 
-    const currentDate = uniqueDates[currentDateIndex];
-    if (!currentDate) return;
+    const aggregated = getAggregatedData();
+    if (aggregated.length === 0) return;
 
-    // Filter data based on active filters and current date
-    const filteredData = data.filter(d => {
-        const dateMatch = d.Date === currentDate;
-        const severityMatch = activeSeverityFilters.has(getRiskCategory(d['Risk Score']));
+    // B. Preserving Axis Labels (Ensures PF4 is always at the same X coordinate)
+    const xLabels = [...new Set(data.map(d => d[currentXField]))].sort();
+    const yLabels = [...new Set(data.map(d => d[currentYField]))].sort();
+
+    const spacing = 5.0; // Restored original grid spacing
+    const barSize = 2.0; // Restored original bar width
+
+    aggregated.forEach(group => {
+        const xIdx = xLabels.indexOf(group.x);
+        const yIdx = yLabels.indexOf(group.y);
         
-        let dynamicMatch = true;
-        Object.keys(activeFilters).forEach(field => {
-            if (activeFilters[field].size > 0 && !activeFilters[field].has(String(d[field]))) {
-                dynamicMatch = false;
-            }
-        });
+        const avgScore = group.totalScore / group.items.length;
+        const totalHeight = Math.max(0.4, avgScore * 0.75);
 
-        return dateMatch && severityMatch && dynamicMatch;
-    });
+        const posX = (xIdx - (xLabels.length - 1) / 2) * spacing;
+        const posZ = (yIdx - (yLabels.length - 1) / 2) * spacing;
 
-    const xKey = FIELD_MAP[currentXField];
-    const yKey = FIELD_MAP[currentYField];
-    
-    // Aggregation Logic (Data Processing)
-    const aggregated = {};
-    filteredData.forEach(d => {
-        const key = `${d[xKey]}-${d[yKey]}`;
-        if (!aggregated[key]) {
-            aggregated[key] = {
-                x: d[xKey],
-                y: d[yKey],
-                count: 0,
-                totalScore: 0,
-                items: []
-            };
-        }
-        aggregated[key].count++;
-        aggregated[key].totalScore += d['Risk Score'];
-        aggregated[key].items.push(d);
-    });
-
-    // Create 3D Meshes (Bars)
-    Object.values(aggregated).forEach(group => {
-        const avgScore = group.totalScore / group.count;
-        
-        // Height logic: uses Risk Score or Mitigation Cost based on mode
-        const heightValue = mitigationMode 
-            ? (group.items.reduce((sum, item) => sum + item['Mitigation Cost'], 0) / group.count) / 800 
-            : avgScore / 2;
-
-        const finalHeight = Math.max(0.2, heightValue); // Minimum visible height
-        
-        const geometry = new THREE.BoxGeometry(0.85, finalHeight, 0.85);
-        const color = mitigationMode ? 0x10B981 : getRiskHexColor(avgScore);
-        
+        // --- LAYER 1: THE CORE RISK BAR ---
+        const geometry = new THREE.BoxGeometry(barSize, totalHeight, barSize);
         const material = new THREE.MeshPhongMaterial({
-            color: color,
+            color: getRiskHexColor(avgScore),
             transparent: true,
-            opacity: 0.85,
-            shininess: 100
+            opacity: 0.8,
+            shininess: 90,
+            specular: 0x444444
         });
-        
+
         const bar = new THREE.Mesh(geometry, material);
-        
-        // Grid positioning (offset to center around origin)
-        bar.position.set(group.x - 3, finalHeight / 2, group.y - 3);
-        bar.userData = { group, avgScore, type: 'bar' };
-        
+        bar.position.set(posX, totalHeight / 2, posZ);
+
+        // Metadata assignment for the UI system
+        bar.userData = { 
+            group: group, 
+            avgScore: avgScore,
+            type: 'data-bar'
+        };
+
         scene.add(bar);
         bars.push(bar);
+
+        // --- LAYER 2: MITIGATION STATUS OVERLAY ---
+        if (mitigationMode) {
+            const mitigatedItems = group.items.filter(i => i['Mitigation Status'] === 'Mitigated');
+            const ratio = mitigatedItems.length / group.items.length;
+
+            if (ratio > 0) {
+                const mitHeight = totalHeight * ratio;
+                // Slightly larger geometry to "shell" the original bar
+                const mitGeo = new THREE.BoxGeometry(barSize + 0.15, mitHeight, barSize + 0.15);
+                const mitMat = new THREE.MeshPhongMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.45,
+                    emissive: 0xffffff,
+                    emissiveIntensity: 0.2
+                });
+
+                const mitMesh = new THREE.Mesh(mitGeo, mitMat);
+                mitMesh.position.set(posX, mitHeight / 2, posZ);
+                mitMesh.userData = { isMitigationLayer: true }; 
+                
+                scene.add(mitMesh);
+                bars.push(mitMesh);
+            }
+        }
     });
+
+    // C. Restoring the Environmental Grid
+    const grid = new THREE.GridHelper(120, 24, 0x312e81, 0x111111);
+    grid.position.y = -0.01;
+    scene.add(grid);
+    bars.push(grid);
 }
 
-function animate() {
-    requestAnimationFrame(animate);
-    if (controls) controls.update();
-    renderer.render(scene, camera);
-}
+// --- INTERACTION LOGIC (RESTORING PICKING PRECISION) ---
 
-// --- INITIALIZATION TRIGGER ---
-// Orchestrates the data loading and engine startup
+function onMouseMove(event) {
+    // Normalizing coordinates for the raycaster
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-window.onload = async () => {
-    try {
-        await loadDataFromJson();
-        
-        // Initial UI Generation
-        generateAxisControls();
-        generateSeverityFilters();
-        renderDynamicFilters();
-        
-        // Start 3D Engine
-        initThree();
-        
-        // Handle loading screen
-        const loader = document.getElementById('initial-loader');
-        if (loader) loader.classList.add('fade-out');
-        
-    } catch (err) {
-        console.error("Critical System Failure:", err);
+    raycaster.setFromCamera(mouse, camera);
+    
+    // Explicitly only intersect with bars that have data (ignoring grid/mitigation layers)
+    const targets = bars.filter(b => b.userData.type === 'data-bar');
+    const intersects = raycaster.intersectObjects(targets);
+
+    // Call the complex UI logic from js/ui.js
+    if (typeof updateTooltip === "function") {
+        updateTooltip(event, intersects);
     }
-};
-
-// --- THREE.JS ENGINE & RENDERING ---
-
-/**
- * Initializes the Three.js environment: Scene, Camera, Renderer, and Lights.
- */
-function initThree() {
-    const canvas = document.getElementById('visualization-canvas');
-    if (!canvas) return;
-
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0c); // Deep dark background
-
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(18, 18, 18);
-    camera.lookAt(0, 0, 0);
-
-    renderer = new THREE.WebGLRenderer({ 
-        canvas, 
-        antialias: true,
-        alpha: true 
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.maxDistance = 50;
-    controls.minDistance = 5;
-
-    // Lighting Configuration
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0x6366f1, 1.2); // Indigo tinted light
-    mainLight.position.set(10, 20, 10);
-    scene.add(mainLight);
-
-    const fillLight = new THREE.PointLight(0xffffff, 0.5);
-    fillLight.position.set(-10, -5, -10);
-    scene.add(fillLight);
-
-    // Raycasting Setup for Interactivity
-    raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
-
-    // Event binding for viewport and interactions
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('click', onMouseClick);
-    window.addEventListener('resize', onWindowResize);
-    
-    animate();
-    renderChart();
 }
 
-/**
- * Core rendering function that maps data to 3D meshes (bars).
- */
-function renderChart() {
-    if (!scene || viewMode !== '3d') return;
+function onCanvasClick(event) {
+    raycaster.setFromCamera(mouse, camera);
+    const targets = bars.filter(b => b.userData.type === 'data-bar');
+    const intersects = raycaster.intersectObjects(targets);
 
-    // Clean up existing bars
-    bars.forEach(bar => scene.remove(bar));
-    bars = [];
-
-    const currentDate = uniqueDates[currentDateIndex];
-    if (!currentDate) return;
-
-    // Filter data for the specific time frame and active filters
-    const filteredData = data.filter(d => {
-        const dateMatch = d.Date === currentDate;
-        const severityMatch = activeSeverityFilters.has(getRiskCategory(d['Risk Score']));
-        
-        let dynamicMatch = true;
-        Object.keys(activeFilters).forEach(field => {
-            if (activeFilters[field].size > 0 && !activeFilters[field].has(String(d[field]))) {
-                dynamicMatch = false;
-            }
-        });
-        return dateMatch && severityMatch && dynamicMatch;
-    });
-
-    const xKey = FIELD_MAP[currentXField];
-    const yKey = FIELD_MAP[currentYField];
-    
-    // Aggregate data into grid positions
-    const aggregated = {};
-    filteredData.forEach(d => {
-        const key = `${d[xKey]}-${d[yKey]}`;
-        if (!aggregated[key]) {
-            aggregated[key] = {
-                x: d[xKey],
-                y: d[yKey],
-                count: 0,
-                totalScore: 0,
-                items: []
-            };
+    if (intersects.length > 0) {
+        const clicked = intersects[0].object;
+        if (clicked.userData.group && typeof showDetailView === "function") {
+            showDetailView(clicked.userData.group);
         }
-        aggregated[key].count++;
-        aggregated[key].totalScore += d['Risk Score'];
-        aggregated[key].items.push(d);
-    });
-
-    // Create 3D Bars based on aggregated metrics
-    Object.values(aggregated).forEach(group => {
-        const avgScore = group.totalScore / group.count;
-        
-        // Height represents Risk or Mitigation Cost
-        const heightValue = mitigationMode 
-            ? (group.items.reduce((sum, item) => sum + item['Mitigation Cost'], 0) / group.count) / 800 
-            : avgScore / 2;
-
-        const finalHeight = Math.max(0.2, heightValue);
-        
-        const geometry = new THREE.BoxGeometry(0.85, finalHeight, 0.85);
-        const color = mitigationMode ? 0x10B981 : getRiskHexColor(avgScore);
-        
-        const material = new THREE.MeshPhongMaterial({
-            color: color,
-            transparent: true,
-            opacity: 0.85,
-            shininess: 100
-        });
-        
-        const bar = new THREE.Mesh(geometry, material);
-        
-        // Center the grid (offset by half of the 1-5 scale)
-        bar.position.set(group.x - 3, finalHeight / 2, group.y - 3);
-        bar.userData = { group, avgScore, type: 'bar' };
-        
-        scene.add(bar);
-        bars.push(bar);
-    });
+    }
 }
 
-/**
- * Standard Three.js animation frame loop
- */
 function animate() {
     requestAnimationFrame(animate);
     if (controls) controls.update();
     renderer.render(scene, camera);
 }
-
-// --- INTERACTION & VIEWPORT HANDLERS ---
 
 function onWindowResize() {
     if (!camera || !renderer) return;
@@ -318,24 +205,6 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// --- INITIALIZATION ENTRY POINT ---
-
-window.onload = async () => {
-    try {
-        // Load data before starting the engine
-        await loadDataFromJson();
-        
-        // Build initial UI state
-        if (typeof generateAxisControls === "function") generateAxisControls();
-        if (typeof generateSeverityFilters === "function") generateSeverityFilters();
-        if (typeof renderDynamicFilters === "function") renderDynamicFilters();
-        
-        // Launch 3D scene
-        initThree();
-        
-        const loader = document.getElementById('initial-loader');
-        if (loader) loader.classList.add('fade-out');
-    } catch (err) {
-        console.error("System Launch Error:", err);
-    }
-};
+// Exporting functions for global access
+window.renderChart = renderChart;
+window.initThree = initThree;

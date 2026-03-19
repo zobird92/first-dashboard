@@ -1,66 +1,45 @@
-// --- UI UPDATERS ---
+// --- TOOLTIP & OVERLAY STATE ---
 
-function updateSliderUI() {
-    const slider = document.getElementById('time-slider');
-    if (slider) {
-        slider.max = uniqueDates.length - 1;
-        slider.value = currentDateIndex;
-    }
-    
-    const dateDisplay = document.getElementById('current-date-display');
-    if (dateDisplay) {
-        dateDisplay.innerText = uniqueDates[currentDateIndex] || "--";
-    }
-}
-// --- INTERACTION & WINDOW HANDLERS ---
-
-function onMouseMove(event) {
-    // Normalizing mouse coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(bars);
+/**
+ * Normalizes mouse coordinates for Three.js Raycasting.
+ * This must be called from engine.js but lives in UI for DOM placement.
+ */
+function updateTooltip(event, intersects) {
     const tooltip = document.getElementById('tooltip');
+    if (!tooltip) return;
 
     if (intersects.length > 0) {
         const intersect = intersects[0];
         const { group, avgScore } = intersect.object.userData;
-        
-        // Visual feedback on hover
+
+        // Visual feedback for hover
         if (hoveredBar && hoveredBar !== intersect.object) {
             hoveredBar.material.opacity = 0.85;
             hoveredBar.material.emissive.setHex(0x000000);
         }
-        
         hoveredBar = intersect.object;
         hoveredBar.material.opacity = 1.0;
-        hoveredBar.material.emissive.setHex(0x333333);
+        hoveredBar.material.emissive.setHex(0x222222);
 
-        // Tooltip Positioning and Content
-        if (tooltip) {
-            tooltip.style.display = 'block';
-            tooltip.style.left = (event.clientX + 20) + 'px';
-            tooltip.style.top = (event.clientY + 20) + 'px';
-            
-            tooltip.innerHTML = `
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] text-gray-500 uppercase font-bold">${currentXField}</span>
-                        <span class="text-white font-black">${group.x}</span>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <span class="text-[10px] text-gray-500 uppercase font-bold">${currentYField}</span>
-                        <span class="text-white font-black">${group.y}</span>
-                    </div>
-                    <div class="pt-2 border-t border-gray-700 flex items-center justify-between">
-                        <span class="text-[10px] text-indigo-400 uppercase font-bold text-xs">Avg Risk</span>
-                        <span class="text-lg font-black ${avgScore >= 17 ? 'text-red-500' : avgScore >= 9 ? 'text-orange-500' : 'text-green-500'}">${Math.round(avgScore)}</span>
-                    </div>
-                    <div class="text-[9px] text-gray-500 italic text-center">Click to view ${group.count} individual records</div>
-                </div>
-            `;
+        // Tooltip Content - Preserving the "Mitigation View" toggle logic
+        tooltip.classList.remove('hidden');
+        tooltip.style.left = (event.clientX + 15) + 'px';
+        tooltip.style.top = (event.clientY + 15) + 'px';
+
+        let html = `
+            <div class="space-y-1">
+                <p class="font-black text-indigo-400 uppercase text-[10px] tracking-widest">${group.x} | ${group.y}</p>
+                <div class="h-px bg-white/10 my-1"></div>
+                <p class="text-white">Avg Risk: <span class="font-mono">${avgScore.toFixed(1)}</span></p>
+                <p class="text-gray-400">Total Items: <span class="text-white">${group.items.length}</span></p>
+        `;
+
+        if (mitigationMode) {
+            const totalCost = group.items.reduce((sum, i) => sum + (i['Mitigation Cost'] || 0), 0);
+            html += `<p class="text-green-400">Total Cost: $${totalCost.toLocaleString()}</p>`;
         }
+
+        tooltip.innerHTML = html + `</div>`;
         document.body.style.cursor = 'pointer';
     } else {
         if (hoveredBar) {
@@ -68,254 +47,227 @@ function onMouseMove(event) {
             hoveredBar.material.emissive.setHex(0x000000);
             hoveredBar = null;
         }
-        if (tooltip) tooltip.style.display = 'none';
+        tooltip.classList.add('hidden');
         document.body.style.cursor = 'default';
     }
 }
 
-function onMouseClick(event) {
-    // Prevent click logic if dragging the camera
-    if (controls && controls.active) return;
-
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(bars);
-
-    if (intersects.length > 0) {
-        const { group } = intersects[0].object.userData;
-        showDetailView(group);
-    }
-}
-
-function onWindowResize() {
-    if (!camera || !renderer) return;
-    
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
-// --- UI GENERATORS ---
+// --- DYNAMIC FILTER GENERATION ---
 
 function generateAxisControls() {
-    const div = document.getElementById('axis-controls');
-    if (!div) return;
-    
-    div.innerHTML = `
-        <div class="control-section bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-            <label class="block text-[10px] text-gray-500 mb-2 uppercase tracking-widest font-black">X-Axis Metric</label>
-            <select onchange="handleAxisChange('x', this.value)" class="w-full bg-gray-900 text-indigo-300 border border-gray-700 rounded-md p-2 mb-4 text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
-                ${FIELD_LABELS.filter(l => l !== currentYField).map(l => `<option value="${l}" ${currentXField === l ? 'selected' : ''}>${l}</option>`).join('')}
-            </select>
-            
-            <label class="block text-[10px] text-gray-500 mb-2 uppercase tracking-widest font-black">Y-Axis Metric</label>
-            <select onchange="handleAxisChange('y', this.value)" class="w-full bg-gray-900 text-indigo-300 border border-gray-700 rounded-md p-2 text-xs focus:ring-1 focus:ring-indigo-500 outline-none">
-                ${FIELD_LABELS.filter(l => l !== currentXField).map(l => `<option value="${l}" ${currentYField === l ? 'selected' : ''}>${l}</option>`).join('')}
-            </select>
+    const container = document.getElementById('axis-controls');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="glass-panel p-4 mb-4">
+            <h4 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-3">Axis Configuration</h4>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[10px] text-gray-500 uppercase mb-1 font-bold">X-Axis (Horizontal)</label>
+                    <select id="x-axis-select" class="w-full bg-[#0a0a0c] border border-white/10 rounded p-2 text-xs text-white outline-none focus:border-indigo-500 transition-colors">
+                        ${Object.keys(FIELD_MAP).map(f => `<option value="${f}" ${f === currentXField ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-gray-500 uppercase mb-1 font-bold">Y-Axis (Depth)</label>
+                    <select id="y-axis-select" class="w-full bg-[#0a0a0c] border border-white/10 rounded p-2 text-xs text-white outline-none focus:border-indigo-500 transition-colors">
+                        ${Object.keys(FIELD_MAP).map(f => `<option value="${f}" ${f === currentYField ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
         </div>
     `;
+
+    document.getElementById('x-axis-select').onchange = (e) => { currentXField = e.target.value; renderChart(); };
+    document.getElementById('y-axis-select').onchange = (e) => { currentYField = e.target.value; renderChart(); };
 }
 
 function generateSeverityFilters() {
-    const div = document.getElementById('severity-filters');
-    if (!div) return;
+    const container = document.getElementById('severity-filters');
+    if (!container) return;
 
-    div.innerHTML = `
-        <label class="block text-[10px] text-gray-500 mb-3 uppercase tracking-widest font-black">Risk Severity</label>
-        <div class="space-y-2">
-            ${Object.keys(RISK_CATEGORIES).map(cat => `
-                <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" checked onchange="handleSeverityChange('${cat}', this.checked)" 
-                        class="w-4 h-4 rounded border-gray-700 bg-gray-900 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-xs text-gray-400 group-hover:text-white transition-colors">${cat}</span>
+    let html = `
+        <div class="glass-panel p-4 mb-4">
+            <h4 class="text-xs font-black text-indigo-400 uppercase tracking-widest mb-3 font-bold">Severity Range (Z)</h4>
+            <div class="space-y-2">
+    `;
+
+    Object.entries(RISK_CATEGORIES).forEach(([name, info]) => {
+        const isActive = activeSeverityFilters.has(name);
+        html += `
+            <label class="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" class="hidden" ${isActive ? 'checked' : ''} onchange="toggleSeverity('${name}')">
+                <div class="w-4 h-4 border border-white/20 rounded flex items-center justify-center transition-all ${isActive ? 'bg-indigo-500 border-indigo-500' : 'group-hover:border-white/40'}">
+                    ${isActive ? '<div class="w-2 h-2 bg-white rounded-sm animate-pulse"></div>' : ''}
+                </div>
+                <span class="text-xs ${isActive ? 'text-white' : 'text-gray-500'} group-hover:text-white transition-colors">${name}</span>
+            </label>
+        `;
+    });
+
+    container.innerHTML = html + `</div></div>`;
+}
+
+function renderDynamicFilters() {
+    const container = document.getElementById('dynamic-filters');
+    if (!container) return;
+
+    // These represent the specific multi-select categories from your original JSON
+    const fieldsToFilter = ['Site', 'Weapon System', 'Subversion Risk Type'];
+    let html = '';
+
+    fieldsToFilter.forEach(field => {
+        const values = getUniqueValuesForField(field);
+        html += `
+            <div class="glass-panel p-4 mb-4">
+                <h4 class="text-[10px] font-black text-gray-500 uppercase tracking-tighter mb-3">${field}</h4>
+                <div class="space-y-1 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+        `;
+
+        values.forEach(val => {
+            const isActive = activeFilters[field]?.has(val);
+            html += `
+                <label class="flex items-center gap-2 cursor-pointer py-1 group">
+                    <input type="checkbox" class="hidden" ${isActive ? 'checked' : ''} onchange="toggleFilter('${field}', '${val}')">
+                    <div class="w-3 h-3 border border-white/10 rounded-sm transition-all ${isActive ? 'bg-indigo-400 border-indigo-400' : 'group-hover:border-white/30'}"></div>
+                    <span class="text-[11px] truncate ${isActive ? 'text-white' : 'text-gray-500'} group-hover:text-gray-300 transition-colors">${val}</span>
                 </label>
+            `;
+        });
+
+        html += `</div></div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// --- DETAIL VIEW (2D MATRIX) ---
+
+function showDetailView(group) {
+    const container = document.getElementById('detail-view');
+    const content = document.getElementById('detail-content');
+    if (!container || !content) return;
+
+    container.classList.remove('hidden');
+    container.style.opacity = '1';
+    
+    // Header logic - showing the aggregate metrics for the selected "Stack"
+    const totalCost = group.items.reduce((sum, i) => sum + (i['Mitigation Cost'] || 0), 0);
+
+    content.innerHTML = `
+        <div class="mb-8 flex justify-between items-start">
+            <div>
+                <h2 class="text-3xl font-black text-white uppercase tracking-tighter leading-none mb-2">${group.x} <span class="text-indigo-500">/</span> ${group.y}</h2>
+                <div class="flex gap-4 text-xs font-mono uppercase tracking-widest text-gray-500">
+                    <p>Total Vectors: <span class="text-white">${group.items.length}</span></p>
+                    <p>Aggregated Risk: <span class="text-white">${(group.totalScore / group.items.length).toFixed(1)}</span></p>
+                    ${mitigationMode ? `<p class="text-green-400">Mitigation: $${totalCost.toLocaleString()}</p>` : ''}
+                </div>
+            </div>
+            <button onclick="closeDetailView()" class="px-6 py-2 border border-white/10 text-xs text-gray-400 hover:text-white hover:bg-white/5 hover:border-white/30 transition-all uppercase tracking-widest font-bold">Close Overlay</button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar max-h-[70vh] pr-4">
+            ${group.items.map(item => `
+                <div class="glass-panel p-5 border-l-4 ${getRiskBorderClass(item['Risk Score'])} hover:bg-white/5 transition-colors">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="px-2 py-1 bg-white/5 rounded text-[9px] font-mono text-gray-400 tracking-tighter">${item.Date}</span>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-500 uppercase tracking-widest">Risk Score</p>
+                            <p class="text-xl font-black text-white leading-none">${item['Risk Score']}</p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-md font-bold text-white mb-1">${item.Facility || 'General Facility'}</h3>
+                    <p class="text-xs text-indigo-400 mb-4 font-medium">${item.Capability || 'Standard Capability'}</p>
+                    
+                    <div class="space-y-2 border-t border-white/5 pt-4">
+                        <div class="flex justify-between items-center text-[10px] uppercase tracking-widest">
+                            <span class="text-gray-500 font-bold">Weapon System</span>
+                            <span class="text-gray-300 font-mono">${item['Weapon System']}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-[10px] uppercase tracking-widest">
+                            <span class="text-gray-500 font-bold">Status</span>
+                            <span class="px-2 py-0.5 rounded-full ${item['Mitigation Status'] === 'Mitigated' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                                ${item['Mitigation Status']}
+                            </span>
+                        </div>
+                        ${mitigationMode ? `
+                        <div class="flex justify-between items-center text-[10px] uppercase tracking-widest pt-2 border-t border-white/5">
+                            <span class="text-green-500 font-bold">Cost Impact</span>
+                            <span class="text-green-400 font-mono">$${(item['Mitigation Cost'] || 0).toLocaleString()}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
             `).join('')}
         </div>
     `;
 }
 
-function renderDynamicFilters() {
-    const div = document.getElementById('dynamic-filters');
-    if (!div || data.length === 0) return;
-
-    const filterFields = ['Site', 'Weapon System', 'Subversion Risk Type'];
-    div.innerHTML = filterFields.map(field => {
-        const values = [...new Set(data.map(d => d[field]))].sort();
-        return `
-            <div class="mb-6">
-                <label class="block text-[10px] text-gray-500 mb-3 uppercase tracking-widest font-black">${field}</label>
-                <div class="max-height-40 overflow-y-auto custom-scrollbar-thin space-y-1">
-                    ${values.map(val => `
-                        <label class="flex items-center space-x-2 cursor-pointer group">
-                            <input type="checkbox" onchange="handleFilterChange('${field}', '${val}', this.checked)"
-                                class="w-3 h-3 rounded border-gray-700 bg-gray-900 text-indigo-600">
-                            <span class="text-[11px] text-gray-500 group-hover:text-gray-300">${val}</span>
-                        </label>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }).join('');
+function closeDetailView() {
+    const container = document.getElementById('detail-view');
+    container.classList.add('hidden');
 }
 
-// --- EVENT HANDLERS ---
-
-function handleTimeChange(val) {
-    currentDateIndex = parseInt(val);
-    const dateDisplay = document.getElementById('current-date-display');
-    if (dateDisplay) dateDisplay.innerText = uniqueDates[currentDateIndex];
-    if (typeof renderChart === "function") renderChart();
-}
-
-function handleAxisChange(axis, value) {
-    if (axis === 'x') currentXField = value;
-    else currentYField = value;
-    
-    generateAxisControls(); // Refresh to update disabled options
-    if (typeof renderChart === "function") renderChart();
-}
-
-function handleSeverityChange(cat, isChecked) {
-    if (isChecked) activeSeverityFilters.add(cat);
-    else activeSeverityFilters.delete(cat);
-    if (typeof renderChart === "function") renderChart();
-}
-
-function handleFilterChange(field, value, isChecked) {
-    if (!activeFilters[field]) activeFilters[field] = new Set();
-    if (isChecked) activeFilters[field].add(value);
-    else activeFilters[field].delete(value);
-    if (typeof renderChart === "function") renderChart();
-}
+// --- INTERACTION HANDLERS ---
 
 function toggleMitigationMode() {
     mitigationMode = !mitigationMode;
     const btn = document.getElementById('mitigation-btn');
     if (btn) {
         if (mitigationMode) {
-            btn.classList.remove('bg-gray-700');
-            btn.classList.add('bg-green-600');
-            btn.innerText = 'Viewing Mitigated Risks';
+            btn.classList.add('bg-green-600', 'text-white');
+            btn.classList.remove('text-gray-400');
+            btn.innerText = 'Viewing Mitigation Costs';
         } else {
-            btn.classList.remove('bg-green-600');
-            btn.classList.add('bg-gray-700');
+            btn.classList.remove('bg-green-600', 'text-white');
+            btn.classList.add('text-gray-400');
             btn.innerText = 'Mitigation Analysis';
         }
     }
-    if (typeof renderChart === "function") renderChart();
+    renderChart();
 }
 
-// --- DETAIL VIEW OVERLAY ---
+function toggleSeverity(category) {
+    if (activeSeverityFilters.has(category)) activeSeverityFilters.delete(category);
+    else activeSeverityFilters.add(category);
+    generateSeverityFilters();
+    renderChart();
+}
 
-function showDetailView(group) {
-    selectedItem = group;
-    viewMode = 'detail';
-    const container = document.getElementById('detail-view-container');
-    if (container) {
-        container.classList.remove('hidden');
-        renderDetailContent();
+function toggleFilter(field, value) {
+    if (!activeFilters[field]) activeFilters[field] = new Set();
+    if (activeFilters[field].has(value)) activeFilters[field].delete(value);
+    else activeFilters[field].add(value);
+    renderDynamicFilters();
+    renderChart();
+}
+
+function updateSliderUI() {
+    const slider = document.getElementById('time-slider');
+    const display = document.getElementById('current-date-display');
+    if (slider) {
+        slider.max = uniqueDates.length - 1;
+        slider.value = currentDateIndex;
     }
+    if (display) display.innerText = uniqueDates[currentDateIndex] || "--";
 }
 
-function hideDetailView() {
-    selectedItem = null;
-    viewMode = '3d';
-    const container = document.getElementById('detail-view-container');
-    if (container) container.classList.add('hidden');
-}
-
-function renderDetailContent() {
-    const div = document.getElementById('detail-content');
-    if (!div || !selectedItem) return;
-
-    const { x, y, items } = selectedItem;
-    
-    div.innerHTML = `
-        <div class="max-w-6xl mx-auto px-6 py-12">
-            <div class="flex items-center justify-between mb-12">
-                <div>
-                    <h2 class="text-4xl font-black text-white tracking-tighter mb-2">SEGMENT ANALYSIS</h2>
-                    <p class="text-gray-500 uppercase tracking-widest text-xs font-bold">
-                        ${currentXField}: <span class="text-indigo-400">${x}</span> 
-                        <span class="mx-3 text-gray-800">|</span> 
-                        ${currentYField}: <span class="text-indigo-400">${y}</span>
-                    </p>
-                </div>
-                <button onclick="hideDetailView()" class="px-6 py-2 bg-gray-800 hover:bg-white hover:text-black text-white text-xs font-bold rounded-full transition-all uppercase tracking-widest">
-                    Back to Canvas
-                </button>
-            </div>
-
-            <div class="bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden shadow-2xl">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-800 text-gray-200 uppercase text-[10px] tracking-widest">
-                        <tr>
-                            <th class="px-6 py-4">Site</th>
-                            <th class="px-6 py-4">Weapon System</th>
-                            <th class="px-6 py-4">Risk Score</th>
-                            <th class="px-6 py-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-800">
-                        ${items.map(item => `
-                            <tr class="hover:bg-gray-800/30 transition-colors">
-                                <td class="px-6 py-4 font-bold text-gray-200">${item.Site}</td>
-                                <td class="px-6 py-4">${item['Weapon System']}</td>
-                                <td class="px-6 py-4 font-mono">${item['Risk Score']}</td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold ${item['Risk Score'] >= 17 ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}">
-                                        ${item['Risk Score'] >= 17 ? 'CRITICAL' : 'STABLE'}
-                                    </span>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-}
-// --- DASHBOARD CONTROL HANDLERS ---
-
-function resetFilters() {
-    // Resetting global state to initial values
-    currentXField = 'Vulnerability Surface';
-    currentYField = 'Adversarial Subversion';
-    activeFilters = {};
-    activeSeverityFilters = new Set(['Watch List', 'Risk Open', 'Subverted - Risk Realized']);
-    mitigationMode = false;
-
-    // Reset UI Elements
-    const mitBtn = document.getElementById('mitigation-btn');
-    if (mitBtn) {
-        mitBtn.classList.remove('bg-green-600');
-        mitBtn.classList.add('bg-gray-700');
-        mitBtn.innerText = 'Mitigation Analysis';
-    }
-
-    // Refresh all UI components
-    if (typeof generateAxisControls === "function") generateAxisControls();
-    if (typeof generateSeverityFilters === "function") generateSeverityFilters();
-    if (typeof renderDynamicFilters === "function") renderDynamicFilters();
-    
-    // Reset Time Slider to most recent quarter
-    currentDateIndex = uniqueDates.length - 1;
-    if (typeof updateSliderUI === "function") updateSliderUI();
-
-    // Redraw 3D scene
-    if (typeof renderChart === "function") renderChart();
-}
-
-// --- DOM EVENT BINDING ---
-// This block ensures that the buttons in your HTML are linked to the logic
+// --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
-    const resetBtn = document.getElementById('reset-dashboard-btn');
-    if (resetBtn) resetBtn.onclick = resetFilters;
+    // Sync buttons from model.html to these logic functions
+    const mitBtn = document.getElementById('mitigation-btn');
+    if (mitBtn) mitBtn.onclick = toggleMitigationMode;
 
     const exportBtn = document.getElementById('export-data-btn');
-    if (exportBtn) {
-        // Linked to the utility function
-        if (typeof exportToExcel === "function") {
-            exportBtn.onclick = exportToExcel;
-        }
+    if (exportBtn) exportBtn.onclick = () => exportToExcel(getFilteredData());
+
+    const slider = document.getElementById('time-slider');
+    if (slider) {
+        slider.oninput = (e) => {
+            currentDateIndex = parseInt(e.target.value);
+            updateSliderUI();
+            renderChart();
+        };
     }
 });
